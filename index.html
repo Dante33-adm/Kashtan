@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>Clean It Up Alone - Pro</title>
+    <title>Clean It Up Alone - Ultimate</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -24,7 +24,7 @@
             pointer-events: none;
             line-height: 1.5;
             z-index: 5;
-            background: rgba(15, 23, 42, 0.72);
+            background: rgba(15, 23, 42, 0.76);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
             padding: 10px 14px;
@@ -32,6 +32,7 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
         .acorn-text { color: #FFD700; font-weight: bold; }
+        .tool-text { color: #38bdf8; font-weight: bold; }
         
         #fatigue-bar-wrap {
             width: 130px;
@@ -42,7 +43,7 @@
             margin: 3px 0 5px 0;
             overflow: hidden;
         }
-        #fatigue-bar { width: 100%; height: 100%; background: #4CAF50; transition: width 0.2s; }
+        #fatigue-bar { width: 100%; height: 100%; background: #4CAF50; transition: width 0.2s, background 0.3s; }
 
         #crosshair {
             position: absolute;
@@ -63,17 +64,14 @@
         #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
         #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
 
-        /* Кнопка встановлення мішка */
-        #btn-bag {
+        .circle-btn {
             position: absolute;
-            bottom: 25px;
-            right: 20px;
-            width: 65px;
-            height: 65px;
+            width: 62px;
+            height: 62px;
             background: rgba(0, 0, 0, 0.55);
             border: 2px solid rgba(255, 255, 255, 0.7);
             border-radius: 50%;
-            font-size: 28px;
+            font-size: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -82,52 +80,15 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.6);
             touch-action: manipulation;
             cursor: pointer;
+            color: white;
         }
-        #btn-bag:active { transform: scale(0.9); background: rgba(46, 125, 50, 0.7); }
-        
-        /* Кнопка ручного збору каштана (✋) */
-        #btn-collect {
-            display: none;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 65px;
-            height: 65px;
-            background: rgba(0, 0, 0, 0.55);
-            border: 2px solid rgba(255, 255, 255, 0.7);
-            border-radius: 50%;
-            font-size: 28px;
-            align-items: center;
-            justify-content: center;
-            z-index: 25;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-            touch-action: manipulation;
-            cursor: pointer;
-        }
-        #btn-collect:active { transform: scale(0.9); background: rgba(76, 175, 80, 0.7); }
+        .circle-btn:active { transform: scale(0.9); }
 
-        /* Кнопка взаємодії з мішком */
-        #btn-bag-interact {
-            display: none;
-            position: absolute;
-            top: 95px;
-            right: 20px;
-            width: 65px;
-            height: 65px;
-            background: rgba(180, 80, 0, 0.75);
-            border: 2px solid rgba(255, 255, 255, 0.7);
-            border-radius: 50%;
-            font-size: 26px;
-            align-items: center;
-            justify-content: center;
-            z-index: 25;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-            touch-action: manipulation;
-            cursor: pointer;
-        }
-        #btn-bag-interact:active { transform: scale(0.9); }
+        #btn-bag { bottom: 20px; right: 20px; }
+        #btn-tool-use { bottom: 92px; right: 20px; display: none; background: rgba(2, 132, 199, 0.75); }
+        #btn-collect { top: 20px; right: 20px; display: none; }
+        #btn-bag-interact { top: 92px; right: 20px; display: none; background: rgba(180, 80, 0, 0.75); }
+        #btn-torch { top: 164px; right: 20px; font-size: 22px; }
 
         .action-btn {
             display: none;
@@ -154,6 +115,11 @@
             background: linear-gradient(135deg, #1976D2, #2196F3);
             border: 2px solid #90CAF9;
         }
+        #btn-rest {
+            bottom: 145px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            border: 2px solid #6ee7b7;
+        }
 
         /* Модальне вікно ПК */
         #skills-modal {
@@ -162,9 +128,9 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 92%;
-            max-width: 480px;
-            max-height: 85vh;
+            width: 94%;
+            max-width: 520px;
+            max-height: 86vh;
             overflow-y: auto;
             background: rgba(15, 23, 42, 0.98);
             backdrop-filter: blur(12px);
@@ -176,6 +142,24 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
         }
         #skills-modal h2 { margin-top: 0; font-size: 18px; text-align: center; color: #60a5fa; }
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .tab-btn.active { background: #2563eb; border-color: #60a5fa; }
+
         .skill-item {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -185,6 +169,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
         .skill-info div:first-child { font-weight: bold; font-size: 13px; color: #f8fafc; }
         .skill-info div:last-child { font-size: 11px; color: #94a3b8; margin-top: 3px; }
@@ -200,7 +185,9 @@
             touch-action: manipulation;
             white-space: nowrap;
         }
-        .skill-btn:active { transform: scale(0.95); background: #1d4ed8; }
+        .skill-btn.acorn-buy { background: #d97706; }
+        .skill-btn.owned { background: #059669; }
+        .skill-btn:active { transform: scale(0.95); }
         #close-modal {
             width: 100%;
             background: #ef4444;
@@ -218,13 +205,13 @@
         #toast {
             position: absolute;
             top: 12px;
-            right: 100px;
-            background: rgba(0, 0, 0, 0.8);
+            right: 95px;
+            background: rgba(0, 0, 0, 0.85);
             color: #fff;
             padding: 10px 14px;
             border-radius: 8px;
             font-size: 13px;
-            max-width: 220px;
+            max-width: 240px;
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
@@ -261,80 +248,149 @@
 <body>
 
     <div id="ui">
-        <div>Час: <span id="time-display">08:00</span></div>
+        <div>Час: <span id="time-display">08:00</span> <span id="weather-display">☀️</span></div>
         <div>Бадьорість:</div>
         <div id="fatigue-bar-wrap"><div id="fatigue-bar"></div></div>
         <div>Гроші: <b>$<span id="money-display">0.00</span></b></div>
         <div class="acorn-text">Золоті жолуді: <span id="acorn-display">3</span></div>
         <div>У руках: <b><span id="inventory-display">0</span> / <span id="max-inv-display">5</span></b></div>
+        <div class="tool-text">Інструмент: <span id="active-tool-display">Руки</span></div>
     </div>
 
     <!-- Модальне вікно ПК -->
     <div id="skills-modal">
-        <h2>💻 Термінал прокачування та інструментів</h2>
-        <div class="skill-item">
-            <div class="skill-info">
-                <div>Місткість кишень</div>
-                <div id="desc-inv">Збільшити ліміт (+5)</div>
-            </div>
-            <button class="skill-btn" onclick="upgradeSkill('inv')">Вивчити</button>
+        <h2>💻 Термінал сараю</h2>
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tab-skills" onclick="switchTab('skills')">Навички ($)</button>
+            <button class="tab-btn" id="tab-tools" onclick="switchTab('tools')">Інструменти ($)</button>
+            <button class="tab-btn" id="tab-acorns" onclick="switchTab('acorns')">Жолуді & Ачівки</button>
         </div>
-        <div class="skill-item">
-            <div class="skill-info">
-                <div>Ціна за каштан</div>
-                <div id="desc-price">Збільшити прибуток за 1 шт.</div>
+
+        <div id="panel-skills">
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>Місткість кишень</div>
+                    <div id="desc-inv">Збільшити ліміт (+5)</div>
+                </div>
+                <button class="skill-btn" onclick="upgradeSkill('inv')">Вивчити</button>
             </div>
-            <button class="skill-btn" onclick="upgradeSkill('price')">Вивчити</button>
-        </div>
-        <div class="skill-item">
-            <div class="skill-info">
-                <div>Місткість мішка</div>
-                <div id="desc-bag">Збільшити об'єм мішків</div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>Ціна за каштан</div>
+                    <div id="desc-price">Збільшити прибуток за 1 шт.</div>
+                </div>
+                <button class="skill-btn" onclick="upgradeSkill('price')">Вивчити</button>
             </div>
-            <button class="skill-btn" onclick="upgradeSkill('bag')">Вивчити</button>
-        </div>
-        <div class="skill-item">
-            <div class="skill-info">
-                <div>Автоматичне підбирання</div>
-                <div id="desc-auto">Повільний магніт каштанів</div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>Місткість мішка</div>
+                    <div id="desc-bag">Збільшити об'єм мішків</div>
+                </div>
+                <button class="skill-btn" onclick="upgradeSkill('bag')">Вивчити</button>
             </div>
-            <button class="skill-btn" onclick="upgradeSkill('auto')">Вивчити</button>
-        </div>
-        <div class="skill-item">
-            <div class="skill-info">
-                <div>Радіус підбору</div>
-                <div id="desc-radius">Збільшити зону збору</div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>Автоматичне підбирання</div>
+                    <div id="desc-auto">Повільний магніт каштанів</div>
+                </div>
+                <button class="skill-btn" onclick="upgradeSkill('auto')">Вивчити</button>
             </div>
-            <button class="skill-btn" onclick="upgradeSkill('radius')">Вивчити</button>
-        </div>
-        <div class="skill-item">
-            <div class="skill-info">
-                <div>Кількість каштанів за раз</div>
-                <div id="desc-power">Брати кілька штук за клік</div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>Радіус підбору</div>
+                    <div id="desc-radius">Збільшити зону збору</div>
+                </div>
+                <button class="skill-btn" onclick="upgradeSkill('radius')">Вивчити</button>
             </div>
-            <button class="skill-btn" onclick="upgradeSkill('power')">Вивчити</button>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>Кількість каштанів за раз</div>
+                    <div id="desc-power">Брати кілька штук за клік</div>
+                </div>
+                <button class="skill-btn" onclick="upgradeSkill('power')">Вивчити</button>
+            </div>
         </div>
+
+        <div id="panel-tools" style="display:none;">
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>🧹 Граблі</div>
+                    <div>Згрібають каштани попереду в одну купку для швидкого збору ($150)</div>
+                </div>
+                <button class="skill-btn" id="btn-buy-rake" onclick="buyOrEquipTool('rake', 150)">Купити ($150)</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>🪓 Лопата</div>
+                    <div>Дозволяє викопувати закопані скарби та золоті жолуді ($300)</div>
+                </div>
+                <button class="skill-btn" id="btn-buy-shovel" onclick="buyOrEquipTool('shovel', 300)">Купити ($300)</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>🧺 Сітчастий збирач (як для гольфу)</div>
+                    <div>Котиш перед собою — автоматично підбирає каштани на ходу без затримки ($600)</div>
+                </div>
+                <button class="skill-btn" id="btn-buy-roller" onclick="buyOrEquipTool('roller', 600)">Купити ($600)</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>🚜 Машинка для збору каштанів</div>
+                    <div>Швидка їзда по лісу + величезний радіус всмоктування каштанів ($1500)</div>
+                </div>
+                <button class="skill-btn" id="btn-buy-cart" onclick="buyOrEquipTool('cart', 1500)">Купити ($1500)</button>
+            </div>
+        </div>
+
+        <div id="panel-acorns" style="display:none;">
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>⚡ Енергетик «Вічна бадьорість»</div>
+                    <div>Зменшує витрату бадьорості вдвічі назавжди (3 Золоті жолуді)</div>
+                </div>
+                <button class="skill-btn acorn-buy" id="btn-acorn-stamina" onclick="buyAcornPerk('stamina', 3)">3 Жолуді</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>🌟 Золотий магніт</div>
+                    <div>Подвоює шанс знайти Золоті жолуді в лісі (5 Золотих жолудів)</div>
+                </div>
+                <button class="skill-btn acorn-buy" id="btn-acorn-luck" onclick="buyAcornPerk('luck', 5)">5 Жолудів</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info">
+                    <div>🏆 Статистика та досягнення</div>
+                    <div id="stats-text">Зібрано всього каштанів: 0</div>
+                </div>
+            </div>
+        </div>
+
         <button id="close-modal" onclick="closePCModal()">Закрити</button>
     </div>
 
     <div id="crosshair"></div>
     <div id="toast"></div>
 
-    <button id="btn-collect" onclick="collectTargetedChestnut()">✋</button>
-    <button id="btn-bag-interact" onclick="handleBagInteract()">📦</button>
-    <button id="btn-bag" onclick="placeEmptyBag()">🎒</button>
+    <button id="btn-collect" class="circle-btn" onclick="collectTargetedChestnut()">✋</button>
+    <button id="btn-bag-interact" class="circle-btn" onclick="handleBagInteract()">📦</button>
+    <button id="btn-torch" class="circle-btn" onclick="toggleFlashlight()">🔦</button>
+    <button id="btn-tool-use" class="circle-btn" onclick="useActiveTool()">⚡</button>
+    <button id="btn-bag" class="circle-btn" onclick="placeEmptyBag()">🎒</button>
+
     <button id="btn-action" class="action-btn" onclick="throwIntoChest()">Здати в скриню</button>
-    <button id="btn-pc" class="action-btn" onclick="openPCModal()">Комп'ютер (Навички)</button>
+    <button id="btn-pc" class="action-btn" onclick="openPCModal()">Комп'ютер (Термінал)</button>
+    <button id="btn-rest" class="action-btn" onclick="restInShed()">Відпочити в сараї (+Бадьорість)</button>
 
     <div id="joystick-zone">
         <div id="joystick-thumb"></div>
     </div>
 
     <script>
-        let scene, camera, renderer, player;
+        let scene, camera, renderer, player, ambientLight, dirLight, flashLight, rainSystem;
         let bags = [];
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, gameTime = 8 * 60, energy = 100;
-        
+        let totalCollectedStats = 0;
+
         let chestnutPrice = 0.7;
         let skillPriceLevel = 0;
         let skillBagLevel = 0;
@@ -342,11 +398,22 @@
         let skillRadiusLevel = 0;
         let skillPowerLevel = 0;
 
+        // Інструменти та перки
+        let ownedTools = { rake: false, shovel: false, roller: false, cart: false };
+        let activeTool = 'none'; // 'none', 'rake', 'shovel', 'roller', 'cart'
+        let perks = { stamina: false, luck: false };
+        let toolMeshes = {}; // Візуальні моделі на полиці в сараї
+        let playerToolHand = null;
+
+        // Погода і світло
+        let isRaining = false;
+        let weatherTimer = 0;
+        let flashlightOn = false;
+
         let moveDir = { x: 0, z: 0 }, isDraggingLook = false, prevTouch = { x: 0, y: 0 }, camRotX = 0;
         let lookTouchId = null;
         let isModalOpen = false;
 
-        // СВІТ ЗБІЛЬШЕНО В 2 РАЗИ
         const areaWidth = 700;
         const areaLength = 900;
         const housePos = new THREE.Vector3(80, 0, -80);
@@ -354,8 +421,13 @@
         const pcPos = new THREE.Vector3(housePos.x + 8, 0, housePos.z);
         
         let chestnutInstances;
-        const totalChestnuts = 90000; // Пропорційно більше каштанів
+        const totalChestnuts = 90000;
         let chestnutData = [];
+
+        let goldenAcornInstances;
+        const totalGoldenAcorns = 180;
+        let goldenAcornData = [];
+
         let targetedChestnutIndex = -1;
         let nearestBagIndex = -1;
         let autoCollectTimer = 0;
@@ -378,6 +450,7 @@
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.0022);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             
@@ -386,8 +459,10 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-            const dirLight = new THREE.DirectionalLight(0xfffaed, 0.8);
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            scene.add(ambientLight);
+
+            dirLight = new THREE.DirectionalLight(0xfffaed, 0.8);
             dirLight.position.set(200, 500, 300);
             scene.add(dirLight);
 
@@ -400,6 +475,8 @@
 
             buildEnvironment();
             generateChestnuts();
+            generateGoldenAcorns();
+            createRain();
 
             player = new THREE.Object3D();
             player.position.set(40, 0, 40);
@@ -408,6 +485,20 @@
             camera.position.set(0, 1.65, 0);
             player.add(camera);
 
+            // Ліхтарик гравця
+            flashLight = new THREE.SpotLight(0xfff5cc, 0, 45, Math.PI / 5, 0.4, 1);
+            flashLight.position.set(0.3, -0.2, 0);
+            flashLight.target.position.set(0, -0.5, -10);
+            camera.add(flashLight);
+            camera.add(flashLight.target);
+
+            // Візуальний тримач інструмента в руці
+            playerToolHand = new THREE.Group();
+            playerToolHand.position.set(0.45, -0.45, -0.8);
+            camera.add(playerToolHand);
+
+            updateShelfVisibility();
+            equipVisualTool();
             setupTouchControls();
             updateUI();
 
@@ -416,6 +507,22 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
+        }
+
+        function createRain() {
+            const rainCount = 3000;
+            const rainGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(rainCount * 3);
+            for (let i = 0; i < rainCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 120;
+                positions[i + 1] = Math.random() * 40;
+                positions[i + 2] = (Math.random() - 0.5) * 120;
+            }
+            rainGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const rainMat = new THREE.PointsMaterial({ color: 0xaaccff, size: 0.25, transparent: true, opacity: 0.75 });
+            rainSystem = new THREE.Points(rainGeo, rainMat);
+            rainSystem.visible = false;
+            scene.add(rainSystem);
         }
 
         function buildEnvironment() {
@@ -450,10 +557,63 @@
             win2.position.set(4.5, 3.5, 6.05);
             houseGroup.add(win1, win2);
 
-            const shelfMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21 });
-            const shelf = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 1.5), shelfMat);
-            shelf.position.set(0, 2.5, -4);
-            houseGroup.add(shelf);
+            // Вітрина інструментів біля сараю
+            const rack = new THREE.Mesh(
+                new THREE.BoxGeometry(7, 0.3, 1.4),
+                new THREE.MeshStandardMaterial({ color: 0x5c3a21 })
+            );
+            rack.position.set(0, 1.5, 7.2);
+            houseGroup.add(rack);
+
+            // 3D-моделі інструментів на вітрині сараю
+            // 1. Граблі
+            const rakeMesh = new THREE.Group();
+            const rHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.2), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
+            rHandle.position.y = 1.1;
+            const rHead = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.15), new THREE.MeshStandardMaterial({ color: 0x555555 }));
+            rHead.position.y = 2.2;
+            rakeMesh.add(rHandle, rHead);
+            rakeMesh.position.set(-2.5, 1.6, 7.2);
+            houseGroup.add(rakeMesh);
+            toolMeshes.rake = rakeMesh;
+
+            // 2. Лопата
+            const shovelMesh = new THREE.Group();
+            const sHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
+            sHandle.position.y = 0.9;
+            const sBlade = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.55, 0.05), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.7 }));
+            sBlade.position.y = 0.25;
+            shovelMesh.add(sHandle, sBlade);
+            shovelMesh.position.set(-1.0, 1.6, 7.2);
+            houseGroup.add(shovelMesh);
+            toolMeshes.shovel = shovelMesh;
+
+            // 3. Сітчастий збирач (як для гольфу)
+            const rollerMesh = new THREE.Group();
+            const rollStick = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            rollStick.position.y = 0.8;
+            const rollBasket = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.32, 0.32, 0.6, 12),
+                new THREE.MeshStandardMaterial({ color: 0x22c55e, wireframe: true })
+            );
+            rollBasket.rotation.z = Math.PI / 2;
+            rollBasket.position.y = 0.32;
+            rollerMesh.add(rollStick, rollBasket);
+            rollerMesh.position.set(0.8, 1.6, 7.2);
+            houseGroup.add(rollerMesh);
+            toolMeshes.roller = rollerMesh;
+
+            // 4. Машинка для збирання каштанів
+            const cartMesh = new THREE.Group();
+            const cBody = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.7, 1.0), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
+            cBody.position.y = 0.55;
+            const cDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.1, 10), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
+            cDrum.rotation.x = Math.PI / 2;
+            cDrum.position.set(0.8, 0.35, 0);
+            cartMesh.add(cBody, cDrum);
+            cartMesh.position.set(2.6, 1.6, 7.2);
+            houseGroup.add(cartMesh);
+            toolMeshes.cart = cartMesh;
 
             houseGroup.position.copy(housePos);
             scene.add(houseGroup);
@@ -518,7 +678,7 @@
             pcGroup.position.copy(pcPos);
             scene.add(pcGroup);
 
-            // Густий великий ліс (550 дерев)
+            // Густий ліс (550 дерев)
             const treeCount = 550;
             const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 6);
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
@@ -534,7 +694,7 @@
                 attempts++;
                 let tx = (Math.random() - 0.5) * (areaWidth - 20);
                 let tz = (Math.random() - 0.5) * (areaLength - 20);
-                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 18) continue;
+                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 22) continue;
 
                 const s = 0.8 + Math.random() * 0.6;
                 dummy.position.set(tx, 3.5 * s, tz);
@@ -549,6 +709,55 @@
                 placed++;
             }
             scene.add(trunks, crowns);
+        }
+
+        function updateShelfVisibility() {
+            if (!toolMeshes.rake) return;
+            toolMeshes.rake.visible = ownedTools.rake;
+            toolMeshes.shovel.visible = ownedTools.shovel;
+            toolMeshes.roller.visible = ownedTools.roller;
+            toolMeshes.cart.visible = ownedTools.cart;
+        }
+
+        function equipVisualTool() {
+            if (!playerToolHand) return;
+            while (playerToolHand.children.length > 0) {
+                playerToolHand.remove(playerToolHand.children[0]);
+            }
+            const useBtn = document.getElementById('btn-tool-use');
+            useBtn.style.display = 'none';
+
+            if (activeTool === 'rake') {
+                const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.4), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
+                stick.rotation.x = Math.PI / 3;
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.1), new THREE.MeshStandardMaterial({ color: 0x444444 }));
+                head.position.set(0, -0.35, -0.55);
+                playerToolHand.add(stick, head);
+                useBtn.style.display = 'flex';
+                useBtn.textContent = '🧹';
+            } else if (activeTool === 'shovel') {
+                const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
+                stick.rotation.x = Math.PI / 3;
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.35, 0.04), new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7 }));
+                blade.position.set(0, -0.3, -0.5);
+                playerToolHand.add(stick, blade);
+                useBtn.style.display = 'flex';
+                useBtn.textContent = '🪓';
+            } else if (activeTool === 'roller') {
+                const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.3), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+                stick.rotation.x = Math.PI / 3;
+                const basket = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.25, 0.25, 0.55, 12),
+                    new THREE.MeshStandardMaterial({ color: 0x22c55e, wireframe: true })
+                );
+                basket.rotation.z = Math.PI / 2;
+                basket.position.set(0, -0.45, -0.65);
+                playerToolHand.add(stick, basket);
+            } else if (activeTool === 'cart') {
+                const hood = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.35, 0.8), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
+                hood.position.set(-0.45, -0.55, -0.4);
+                playerToolHand.add(hood);
+            }
         }
 
         function generateChestnuts() {
@@ -580,8 +789,31 @@
             scene.add(chestnutInstances);
         }
 
+        function generateGoldenAcorns() {
+            const geom = new THREE.SphereGeometry(0.16, 8, 8);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xFFD700, emissive: 0xaa7700, emissiveIntensity: 0.5, metalness: 0.8, roughness: 0.2 });
+            goldenAcornInstances = new THREE.InstancedMesh(geom, mat, totalGoldenAcorns);
+            goldenAcornInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+            const dummy = new THREE.Object3D();
+            for (let i = 0; i < totalGoldenAcorns; i++) {
+                let x = (Math.random() - 0.5) * (areaWidth - 30);
+                let z = (Math.random() - 0.5) * (areaLength - 30);
+                dummy.position.set(x, 0.14, z);
+                dummy.updateMatrix();
+                goldenAcornInstances.setMatrixAt(i, dummy.matrix);
+                goldenAcornData.push({ x, z, collected: false });
+            }
+            goldenAcornInstances.instanceMatrix.needsUpdate = true;
+            scene.add(goldenAcornInstances);
+        }
+
         function saveGameData() {
-            const data = { money, acorns, maxInventory, energy, chestnutPrice, skillPriceLevel, skillBagLevel, skillAutoLevel, skillRadiusLevel, skillPowerLevel };
+            const data = {
+                money, acorns, maxInventory, energy, totalCollectedStats,
+                chestnutPrice, skillPriceLevel, skillBagLevel, skillAutoLevel, skillRadiusLevel, skillPowerLevel,
+                ownedTools, activeTool, perks
+            };
             localStorage.setItem('cleanItUpAloneSave', JSON.stringify(data));
         }
 
@@ -590,15 +822,84 @@
             if (saved) {
                 const data = JSON.parse(saved);
                 money = data.money || 0;
-                acorns = data.acorns || 3;
+                acorns = data.acorns !== undefined ? data.acorns : 3;
                 maxInventory = data.maxInventory || 5;
-                energy = data.energy || 100;
+                energy = data.energy !== undefined ? data.energy : 100;
+                totalCollectedStats = data.totalCollectedStats || 0;
                 chestnutPrice = data.chestnutPrice || 0.7;
                 skillPriceLevel = data.skillPriceLevel || 0;
                 skillBagLevel = data.skillBagLevel || 0;
                 skillAutoLevel = data.skillAutoLevel || 0;
                 skillRadiusLevel = data.skillRadiusLevel || 0;
                 skillPowerLevel = data.skillPowerLevel || 0;
+                if (data.ownedTools) ownedTools = data.ownedTools;
+                if (data.activeTool) activeTool = data.activeTool;
+                if (data.perks) perks = data.perks;
+            }
+        }
+
+        function toggleFlashlight() {
+            flashlightOn = !flashlightOn;
+            flashLight.intensity = flashlightOn ? 2.5 : 0;
+            showToast(flashlightOn ? "Ліхтарик увімкнено 🔦" : "Ліхтарик вимкнено", "#38bdf8");
+        }
+
+        function restInShed() {
+            energy = 100;
+            gameTime += 120; // Сон 2 години
+            if (gameTime >= 1440) gameTime -= 1440;
+            updateUI();
+            saveGameData();
+            showToast("Ви добре відпочили! Бадьорість відновлено на 100%!", "#10b981");
+        }
+
+        // Використання граблів або лопати
+        function useActiveTool() {
+            if (activeTool === 'rake') {
+                // Граблі згрібають каштани в радіусі 8м прямо перед гравцем
+                const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
+                const pileX = player.position.x + fwd.x * 2.0;
+                const pileZ = player.position.z + fwd.z * 2.0;
+                let rakedCount = 0;
+
+                for (let i = 0; i < chestnutData.length; i++) {
+                    let c = chestnutData[i];
+                    if (!c.collected && Math.hypot(player.position.x - c.x, player.position.z - c.z) < 8.5) {
+                        c.x = pileX + (Math.random() - 0.5) * 0.6;
+                        c.z = pileZ + (Math.random() - 0.5) * 0.6;
+                        dummyMatrix.position.set(c.x, 0.05, c.z);
+                        dummyMatrix.scale.set(1, 0.85, 1);
+                        dummyMatrix.updateMatrix();
+                        chestnutInstances.setMatrixAt(i, dummyMatrix.matrix);
+                        rakedCount++;
+                    }
+                }
+                if (rakedCount > 0) {
+                    chestnutInstances.instanceMatrix.needsUpdate = true;
+                    energy = Math.max(5, energy - 1.5);
+                    showToast(`Граблі згребли ${rakedCount} каштанів у купку перед вами!`, "#38bdf8");
+                    updateUI();
+                } else {
+                    showToast("Поруч немає каштанів для згрібання!", "#f44336");
+                }
+            } else if (activeTool === 'shovel') {
+                // Лопата копає землю — шанс знайти скарб ($ або Золотий жолудь)
+                if (energy < 10) {
+                    showToast("Занадто мало бадьорості, щоб копати! Відпочиньте біля сараю.", "#f44336");
+                    return;
+                }
+                energy = Math.max(0, energy - 5);
+                let luckChance = perks.luck ? 0.35 : 0.18;
+                if (Math.random() < luckChance) {
+                    acorns++;
+                    showToast("Ви викопали ЗОЛОТИЙ ЖОЛУДЬ! 🌟", "#FFD700");
+                } else {
+                    let foundCash = (5 + Math.random() * 15) * (1 + skillPriceLevel * 0.2);
+                    money += foundCash;
+                    showToast(`Викопано стару монету: +$${foundCash.toFixed(2)}!`, "#4CAF50");
+                }
+                updateUI();
+                saveGameData();
             }
         }
 
@@ -686,6 +987,17 @@
             showToast(`Здано ${totalToProcess} шт. Зароблено: $${earned.toFixed(2)}!`);
         }
 
+        function switchTab(tab) {
+            document.getElementById('panel-skills').style.display = tab === 'skills' ? 'block' : 'none';
+            document.getElementById('panel-tools').style.display = tab === 'tools' ? 'block' : 'none';
+            document.getElementById('panel-acorns').style.display = tab === 'acorns' ? 'block' : 'none';
+
+            document.getElementById('tab-skills').classList.toggle('active', tab === 'skills');
+            document.getElementById('tab-tools').classList.toggle('active', tab === 'tools');
+            document.getElementById('tab-acorns').classList.toggle('active', tab === 'acorns');
+            updateModalTexts();
+        }
+
         function openPCModal() {
             isModalOpen = true;
             document.getElementById('skills-modal').style.display = 'block';
@@ -697,13 +1009,52 @@
             document.getElementById('skills-modal').style.display = 'none';
         }
 
+        function buyOrEquipTool(toolId, cost) {
+            if (!ownedTools[toolId]) {
+                if (money >= cost) {
+                    money -= cost;
+                    ownedTools[toolId] = true;
+                    activeTool = toolId;
+                    updateShelfVisibility();
+                    equipVisualTool();
+                    showToast(`Куплено та взято в руки!`, "#4CAF50");
+                } else {
+                    showToast(`Не вистачає грошей! Потрібно $${cost}`, "#f44336");
+                    return;
+                }
+            } else {
+                activeTool = (activeTool === toolId) ? 'none' : toolId;
+                equipVisualTool();
+                showToast(activeTool === 'none' ? "Інструмент прибрано" : "Інструмент екіпіровано!", "#38bdf8");
+            }
+            updateUI();
+            saveGameData();
+            updateModalTexts();
+        }
+
+        function buyAcornPerk(perkId, cost) {
+            if (perks[perkId]) {
+                showToast("Вже активовано!", "#38bdf8");
+                return;
+            }
+            if (acorns >= cost) {
+                acorns -= cost;
+                perks[perkId] = true;
+                showToast("Унікальний бонус за Золоті жолуді активовано!", "#FFD700");
+                updateUI();
+                saveGameData();
+                updateModalTexts();
+            } else {
+                showToast(`Потрібно ${cost} Золотих жолудів!`, "#f44336");
+            }
+        }
+
         function updateModalTexts() {
             let invCost = maxInventory * 15;
             document.getElementById('desc-inv').textContent = `Збільшити ліміт (+5) | Ціна: $${invCost.toFixed(2)}`;
             
             let priceCost = (skillPriceLevel + 1) * 50;
-            let currentPriceStr = chestnutPrice.toFixed(2);
-            document.getElementById('desc-price').textContent = `Ціна за 1 шт: $${currentPriceStr} (+0.15$) | Ціна: $${priceCost}`;
+            document.getElementById('desc-price').textContent = `Ціна за 1 шт: $${chestnutPrice.toFixed(2)} (+0.15$) | Ціна: $${priceCost}`;
 
             let bagCost = (skillBagLevel + 1) * 60;
             let bagCap = 30 + (skillBagLevel + 1) * 20;
@@ -719,6 +1070,26 @@
             let powerCost = (skillPowerLevel + 1) * 40;
             let currentPower = 1 + skillPowerLevel;
             document.getElementById('desc-power').textContent = `Брати за раз: ${currentPower} шт. (Рівень ${skillPowerLevel}) | Ціна: $${powerCost}`;
+
+            // Кнопки інструментів
+            const updateToolBtn = (id, key, price) => {
+                const btn = document.getElementById(id);
+                if (!ownedTools[key]) {
+                    btn.textContent = `Купити ($${price})`;
+                    btn.classList.remove('owned');
+                } else {
+                    btn.textContent = activeTool === key ? 'В руках (Зняти)' : 'Взяти';
+                    btn.classList.add('owned');
+                }
+            };
+            updateToolBtn('btn-buy-rake', 'rake', 150);
+            updateToolBtn('btn-buy-shovel', 'shovel', 300);
+            updateToolBtn('btn-buy-roller', 'roller', 600);
+            updateToolBtn('btn-buy-cart', 'cart', 1500);
+
+            if (perks.stamina) document.getElementById('btn-acorn-stamina').textContent = 'Активовано';
+            if (perks.luck) document.getElementById('btn-acorn-luck').textContent = 'Активовано';
+            document.getElementById('stats-text').textContent = `Всього зібрано каштанів за кар'єру: ${totalCollectedStats} шт.`;
         }
 
         function upgradeSkill(type) {
@@ -773,7 +1144,6 @@
 
         const dummyMatrix = new THREE.Object3D();
         
-        // РУЧНИЙ ЗБІР ЧЕРЕЗ КНОПКУ ✋
         function collectTargetedChestnut() {
             let power = 1 + skillPowerLevel;
             let collectedCount = 0;
@@ -783,6 +1153,7 @@
                 if (!c.collected) {
                     c.collected = true;
                     inventory++;
+                    totalCollectedStats++;
                     collectedCount++;
 
                     dummyMatrix.position.set(0, -999, 0);
@@ -793,7 +1164,7 @@
             }
 
             if (power > 1 && inventory < maxInventory) {
-                let searchRadius = 2.0;
+                let searchRadius = 2.5;
                 for (let i = 0; i < chestnutData.length && inventory < maxInventory; i++) {
                     if (collectedCount >= power) break;
                     let c = chestnutData[i];
@@ -802,6 +1173,7 @@
                         if (dist < searchRadius) {
                             c.collected = true;
                             inventory++;
+                            totalCollectedStats++;
                             collectedCount++;
                             dummyMatrix.position.set(0, -999, 0);
                             dummyMatrix.scale.set(0, 0, 0);
@@ -816,6 +1188,7 @@
                 chestnutInstances.instanceMatrix.needsUpdate = true;
                 targetedChestnutIndex = -1;
                 document.getElementById('btn-collect').style.display = 'none';
+                energy = Math.max(0, energy - (perks.stamina ? 0.15 : 0.3));
                 updateUI();
             }
         }
@@ -902,7 +1275,73 @@
             document.getElementById('acorn-display').textContent = acorns;
             document.getElementById('inventory-display').textContent = inventory;
             document.getElementById('max-inv-display').textContent = maxInventory;
-            document.getElementById('fatigue-bar').style.width = energy + "%";
+            
+            const bar = document.getElementById('fatigue-bar');
+            bar.style.width = energy + "%";
+            bar.style.background = energy > 50 ? "#4CAF50" : (energy > 20 ? "#ff9800" : "#ef4444");
+
+            const toolNames = {
+                none: 'Руки',
+                rake: 'Граблі 🧹',
+                shovel: 'Лопата 🪓',
+                roller: 'Сітчастий збирач 🧺',
+                cart: 'Машинка 🚜'
+            };
+            document.getElementById('active-tool-display').textContent = toolNames[activeTool] || 'Руки';
+        }
+
+        function updateDayNightAndWeather() {
+            // Час доби (впливає на небо та освітлення)
+            let hour = gameTime / 60;
+            let dayFactor = Math.sin(((hour - 6) / 24) * Math.PI * 2); // +1 вдень, -1 вночі
+            let lightRatio = Math.max(0.15, (dayFactor + 1) / 2);
+
+            ambientLight.intensity = 0.2 + lightRatio * 0.75;
+            dirLight.intensity = lightRatio * 0.85;
+
+            let skyColor = new THREE.Color().lerpColors(
+                new THREE.Color(0x0a1128), // Нічне небо
+                isRaining ? new THREE.Color(0x526071) : new THREE.Color(0x87CEEB),
+                lightRatio
+            );
+            scene.background = skyColor;
+            scene.fog.color = skyColor;
+
+            // Погода (дощ кожні кілька хвилин)
+            weatherTimer++;
+            if (weatherTimer > 3600) { // ~1 хвилина реального часу
+                weatherTimer = 0;
+                isRaining = !isRaining;
+                rainSystem.visible = isRaining;
+                document.getElementById('weather-display').textContent = isRaining ? '🌧️ Дощ' : '☀️';
+                if (isRaining) {
+                    showToast("Почався дощ! Каштани падають з дерев швидше 🌧️", "#38bdf8");
+                }
+            }
+
+            if (isRaining && rainSystem) {
+                rainSystem.position.x = player.position.x;
+                rainSystem.position.z = player.position.z;
+                const pos = rainSystem.geometry.attributes.position.array;
+                for (let i = 1; i < pos.length; i += 3) {
+                    pos[i] -= 0.7;
+                    if (pos[i] < 0) pos[i] = 40;
+                }
+                rainSystem.geometry.attributes.position.needsUpdate = true;
+
+                // Під час дощу частина зібраних каштанів знову з'являється під деревами
+                if (Math.random() < 0.25) {
+                    let rndIdx = Math.floor(Math.random() * chestnutData.length);
+                    if (chestnutData[rndIdx].collected) {
+                        chestnutData[rndIdx].collected = false;
+                        dummyMatrix.position.set(chestnutData[rndIdx].x, 0.05, chestnutData[rndIdx].z);
+                        dummyMatrix.scale.set(1, 0.85, 1);
+                        dummyMatrix.updateMatrix();
+                        chestnutInstances.setMatrixAt(rndIdx, dummyMatrix.matrix);
+                        chestnutInstances.instanceMatrix.needsUpdate = true;
+                    }
+                }
+            }
         }
 
         const raycaster = new THREE.Raycaster();
@@ -915,22 +1354,80 @@
                 document.getElementById('btn-bag-interact').style.display = "none";
                 document.getElementById('btn-pc').style.display = "none";
                 document.getElementById('btn-action').style.display = "none";
+                document.getElementById('btn-rest').style.display = "none";
                 return;
             } else {
                 document.getElementById('btn-bag').style.display = "flex";
             }
 
+            // Швидкість руху залежить від бадьорості та машинки
+            let isMoving = Math.abs(moveDir.x) > 0.05 || Math.abs(moveDir.z) > 0.05;
+            let baseSpeed = activeTool === 'cart' ? 0.34 : 0.16;
+            let fatigueMult = energy > 20 ? 1.0 : 0.55; // Якщо бадьорість низька — ходимо повільніше
+            let currentSpeed = baseSpeed * fatigueMult;
+
+            if (isMoving) {
+                let drain = activeTool === 'cart' ? 0.002 : (perks.stamina ? 0.006 : 0.012);
+                energy = Math.max(5, energy - drain);
+            } else {
+                // Повільне відновлення, коли стоїш на місці
+                energy = Math.min(100, energy + 0.01);
+            }
+
             const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
             const right = new THREE.Vector3(1, 0, 0).applyQuaternion(player.quaternion);
             
-            let newX = player.position.x - moveDir.z * 0.16 * fwd.x + moveDir.x * 0.16 * right.x;
-            let newZ = player.position.z - moveDir.z * 0.16 * fwd.z + moveDir.x * 0.16 * right.z;
+            let newX = player.position.x - moveDir.z * currentSpeed * fwd.x + moveDir.x * currentSpeed * right.x;
+            let newZ = player.position.z - moveDir.z * currentSpeed * fwd.z + moveDir.x * currentSpeed * right.z;
 
             const margin = 3.0;
             player.position.x = Math.max(-areaWidth / 2 + margin, Math.min(areaWidth / 2 - margin, newX));
             player.position.z = Math.max(-areaLength / 2 + margin, Math.min(areaLength / 2 - margin, newZ));
 
-            // Автозбір (працює паралельно фоном, якщо вивчений)
+            // Автоматичний підбір Золотих жолудів при проходженні поруч
+            for (let i = 0; i < goldenAcornData.length; i++) {
+                let ga = goldenAcornData[i];
+                if (!ga.collected && Math.hypot(player.position.x - ga.x, player.position.z - ga.z) < 2.2) {
+                    ga.collected = true;
+                    acorns++;
+                    dummyMatrix.position.set(0, -999, 0);
+                    dummyMatrix.scale.set(0, 0, 0);
+                    dummyMatrix.updateMatrix();
+                    goldenAcornInstances.setMatrixAt(i, dummyMatrix.matrix);
+                    goldenAcornInstances.instanceMatrix.needsUpdate = true;
+                    showToast("Знайдено ЗОЛОТИЙ ЖОЛУДЬ! 🌟", "#FFD700");
+                    updateUI();
+                    saveGameData();
+                }
+            }
+
+            // Збір каштанів (Сітчастий збирач / Машинка працюють миттєво на ходу!)
+            if ((activeTool === 'roller' || activeTool === 'cart') && inventory < maxInventory && chestnutInstances) {
+                let toolRad = activeTool === 'cart' ? 4.8 : 2.6;
+                let maxPick = activeTool === 'cart' ? 5 : 2;
+                let picked = 0;
+
+                for (let i = 0; i < chestnutData.length && inventory < maxInventory; i++) {
+                    if (picked >= maxPick) break;
+                    let c = chestnutData[i];
+                    if (!c.collected && Math.hypot(player.position.x - c.x, player.position.z - c.z) < toolRad) {
+                        c.collected = true;
+                        inventory++;
+                        totalCollectedStats++;
+                        picked++;
+                        dummyMatrix.position.set(0, -999, 0);
+                        dummyMatrix.scale.set(0, 0, 0);
+                        dummyMatrix.updateMatrix();
+                        chestnutInstances.setMatrixAt(i, dummyMatrix.matrix);
+                    }
+                }
+                if (picked > 0) {
+                    chestnutInstances.instanceMatrix.needsUpdate = true;
+                    updateUI();
+                }
+            }
+
+            // Звичайний повільний автозбір (навичка)
             if (skillAutoLevel > 0 && inventory < maxInventory && chestnutInstances) {
                 autoCollectTimer++;
                 let interval = Math.max(20, 90 - skillAutoLevel * 15);
@@ -946,6 +1443,7 @@
                             if (dist < autoRadius) {
                                 c.collected = true;
                                 inventory++;
+                                totalCollectedStats++;
                                 dummyMatrix.position.set(0, -999, 0);
                                 dummyMatrix.scale.set(0, 0, 0);
                                 dummyMatrix.updateMatrix();
@@ -980,7 +1478,7 @@
                 bagInteractBtn.style.display = "none";
             }
 
-            // Ручний приціл для збору кнопкою ✋ (завжди активний незалежно від автозбору)
+            // Ручний приціл для збору кнопкою ✋
             targetedChestnutIndex = -1;
             if (inventory < maxInventory && chestnutInstances) {
                 raycaster.setFromCamera(screenCenter, camera);
@@ -1011,25 +1509,18 @@
                 collectBtn.style.display = "none";
             }
 
-            const actionBtn = document.getElementById('btn-action');
-            const pcBtn = document.getElementById('btn-pc');
-            
-            if (player.position.distanceTo(chestPos) < 5.5) {
-                actionBtn.style.display = "block";
-            } else {
-                actionBtn.style.display = "none";
-            }
+            // Кнопки біля сараю, скрині та ПК
+            document.getElementById('btn-action').style.display = player.position.distanceTo(chestPos) < 5.5 ? "block" : "none";
+            document.getElementById('btn-pc').style.display = player.position.distanceTo(pcPos) < 5.0 ? "block" : "none";
+            document.getElementById('btn-rest').style.display = player.position.distanceTo(housePos) < 10.0 ? "block" : "none";
 
-            if (player.position.distanceTo(pcPos) < 5.0) {
-                pcBtn.style.display = "block";
-            } else {
-                pcBtn.style.display = "none";
-            }
+            updateDayNightAndWeather();
 
             gameTime += 0.075;
             if (gameTime >= 1440) gameTime = 0;
             const h = Math.floor(gameTime / 60), m = Math.floor(gameTime % 60);
             document.getElementById('time-display').textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+            document.getElementById('fatigue-bar').style.width = energy + "%";
         }
 
         function animate() {
