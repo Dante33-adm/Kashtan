@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>Clean It Up Alone - Optimized</title>
+    <title>Clean It Up Alone - Pro House & Auto Doors</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -295,7 +295,6 @@
         <div class="tool-cargo-text" id="tool-cargo-row" style="display:none;"> В інструменті: <b><span id="tool-cargo-display">0</span> / <span id="tool-cargo-max">0</span></b></div>
     </div>
 
-    <!-- Модальне вікно ПК -->
     <div id="skills-modal">
         <h2>💻 Термінал сараю</h2>
         <div class="tab-bar">
@@ -399,6 +398,9 @@
     <script>
         let scene, camera, renderer, player, ambientLight, dirLight, flashLight, rainSystem;
         let bags = [];
+        let collisionObjects = [];
+        let treePositions = [];
+        let doorMesh = null; // Посилання на стулку дверей для анімації відчинення
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, gameTime = 8 * 60, energy = 100, maxEnergy = 100;
         let totalCollectedStats = 0;
 
@@ -493,16 +495,15 @@
         let lookTouchId = null;
         let isModalOpen = false;
 
-        // Оптимізований розмір карти
         const areaWidth = 480;
         const areaLength = 650;
         const housePos = new THREE.Vector3(70, 0, -70);
-        const chestPos = new THREE.Vector3(housePos.x - 12, 0, housePos.z);
-        const pcPos = new THREE.Vector3(housePos.x + 8, 0, housePos.z);
-        const bedPos = new THREE.Vector3(housePos.x - 4, 0, housePos.z - 2);
+        const chestPos = new THREE.Vector3(housePos.x - 12, 0, housePos.z + 2);
+        const pcPos = new THREE.Vector3(housePos.x - 4, 0, housePos.z - 3);   
+        const bedPos = new THREE.Vector3(housePos.x + 4, 0, housePos.z - 3);   
         
         let chestnutInstances;
-        const totalChestnuts = 45000; // Зменшено вдвічі для плавності на телефоні
+        const totalChestnuts = 45000;
         let chestnutData = [];
 
         let goldenAcornInstances;
@@ -560,7 +561,7 @@
             createRain();
 
             player = new THREE.Object3D();
-            player.position.set(housePos.x, 0, housePos.z + 10);
+            player.position.set(housePos.x, 0, housePos.z + 12);
             scene.add(player);
             
             camera.position.set(0, 1.65, 0);
@@ -607,78 +608,125 @@
         function buildEnvironment() {
             const houseGroup = new THREE.Group();
             
+            // Ширший і пропорційний дім (ширина 14, довжина 11, висота 3.6)
             const walls = new THREE.Mesh(
-                new THREE.BoxGeometry(14, 6, 12),
+                new THREE.BoxGeometry(14, 3.6, 11),
                 new THREE.MeshStandardMaterial({ color: 0xc2a685, roughness: 0.8 })
             );
-            walls.position.y = 3;
+            walls.position.y = 1.8;
             houseGroup.add(walls);
 
-            const roof = new THREE.Mesh(
-                new THREE.ConeGeometry(10, 4, 4),
-                new THREE.MeshStandardMaterial({ color: 0x8b2500, roughness: 0.7 })
+            // Фундамент будинку
+            const foundation = new THREE.Mesh(
+                new THREE.BoxGeometry(14.4, 0.4, 11.4),
+                new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9 })
             );
-            roof.position.y = 8;
-            roof.rotation.y = Math.PI / 4;
-            houseGroup.add(roof);
+            foundation.position.y = 0.2;
+            houseGroup.add(foundation);
 
-            // Повністю чисті двері (балку прибрано)
-            const door = new THREE.Mesh(
-                new THREE.BoxGeometry(2.4, 4.2, 0.2),
+            collisionObjects.push({ type: 'box', center: housePos, sizeX: 14, sizeZ: 11 });
+
+            // Двосхилий дах будинку (більш натуральний вигляд)
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x8b2500, roughness: 0.7 });
+            const roofLeft = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.3, 12), roofMat);
+            roofLeft.position.set(-3.5, 4.3, 0);
+            roofLeft.rotation.z = Math.PI / 6;
+            const roofRight = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.3, 12), roofMat);
+            roofRight.position.set(3.5, 4.3, 0);
+            roofRight.rotation.z = -Math.PI / 6;
+            houseGroup.add(roofLeft, roofRight);
+
+            // АВТОМАТИЧНІ ДВЕРІ
+            doorMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(2.2, 3.0, 0.2),
                 new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.6 })
             );
-            door.position.set(0, 2.1, 6.05);
-            houseGroup.add(door);
+            doorMesh.position.set(0, 1.5, 5.55);
+            houseGroup.add(doorMesh);
 
             const windowMat = new THREE.MeshStandardMaterial({ color: 0x87CEEB, roughness: 0.1, transparent: true, opacity: 0.7 });
-            const win1 = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 0.2), windowMat);
-            win1.position.set(-4.5, 3.5, 6.05);
-            const win2 = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 0.2), windowMat);
-            win2.position.set(4.5, 3.5, 6.05);
+            const win1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 0.2), windowMat);
+            win1.position.set(-4.5, 2.1, 5.55);
+            const win2 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 0.2), windowMat);
+            win2.position.set(4.5, 2.1, 5.55);
             houseGroup.add(win1, win2);
 
+            // ЛІЖКО ВСЕРЕДИНІ БУДИНКУ
             const bedGroup = new THREE.Group();
-            const bedBase = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 1.4), new THREE.MeshStandardMaterial({ color: 0x5c3a21 }));
-            bedBase.position.y = 0.4;
-            const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.3, 1.3), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-            mattress.position.set(0, 0.85, 0);
-            const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 1.1), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
-            pillow.position.set(-0.7, 1.02, 0);
-            bedGroup.add(bedBase, mattress, pillow);
-            bedGroup.position.set(-4, 0, -2);
-            houseGroup.add(bedGroup);
+            const bedBase = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.7, 1.3), new THREE.MeshStandardMaterial({ color: 0x5c3a21 }));
+            bedBase.position.y = 0.35;
+            const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.25, 1.2), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+            mattress.position.set(0, 0.72, 0);
+            bedGroup.add(bedBase, mattress);
+            bedGroup.position.copy(bedPos);
+            scene.add(bedGroup);
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(bedPos), sizeX: 2.2, sizeZ: 1.5 });
 
-            // Вітрина інструментів перенесена безпечно праворуч від дверей (не заважає проходу)
+            // КОМП'ЮТЕР ВСЕРЕДИНІ БУДИНКУ
+            const pcGroup = new THREE.Group();
+            const pcDesk = new THREE.Mesh(
+                new THREE.BoxGeometry(2.2, 0.9, 1.2),
+                new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.5 })
+            );
+            pcDesk.position.y = 0.45;
+            const pcCase = new THREE.Mesh(
+                new THREE.BoxGeometry(0.45, 0.8, 0.9),
+                new THREE.MeshStandardMaterial({ color: 0x1e1e1e, metalness: 0.6 })
+            );
+            pcCase.position.set(0.7, 1.3, 0);
+            const monitorScreen = new THREE.Mesh(
+                new THREE.BoxGeometry(1.3, 0.75, 0.1),
+                new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x0055ff, emissiveIntensity: 0.7 })
+            );
+            monitorScreen.position.set(-0.2, 1.5, 0);
+            pcGroup.add(pcDesk, pcCase, monitorScreen);
+            pcGroup.position.copy(pcPos);
+            scene.add(pcGroup);
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(pcPos), sizeX: 2.4, sizeZ: 1.4 });
+
+            // СКРИНЯ БІЛЯ БУДИНКУ
+            const chestGroup = new THREE.Group();
+            const chestBody = new THREE.Mesh(
+                new THREE.BoxGeometry(2.0, 1.0, 1.3),
+                new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.6 })
+            );
+            chestBody.position.y = 0.5;
+            chestGroup.add(chestBody);
+            chestGroup.position.copy(chestPos);
+            scene.add(chestGroup);
+            collisionObjects.push({ type: 'box', center: chestPos, sizeX: 2.2, sizeZ: 1.5 });
+
+            // ВІТРИНА ІНСТРУМЕНТІВ ЗОВНІ ЗБОКУ
             const rack = new THREE.Mesh(
                 new THREE.BoxGeometry(5, 0.3, 1.2),
                 new THREE.MeshStandardMaterial({ color: 0x5c3a21 })
             );
-            rack.position.set(4.5, 1.5, 6.5);
+            rack.position.set(5.2, 1.5, 5.8);
             houseGroup.add(rack);
 
             const rakeMesh = new THREE.Group();
-            const rHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.0), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
-            rHandle.position.y = 1.0;
+            const rHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
+            rHandle.position.y = 0.9;
             const rHead = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.08, 0.15), new THREE.MeshStandardMaterial({ color: 0x555555 }));
-            rHead.position.y = 2.0;
+            rHead.position.y = 1.8;
             rakeMesh.add(rHandle, rHead);
-            rakeMesh.position.set(2.8, 1.6, 6.5);
+            rakeMesh.position.set(3.5, 1.6, 5.8);
             houseGroup.add(rakeMesh);
             toolMeshes.rake = rakeMesh;
 
             const shovelMesh = new THREE.Group();
-            const sHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
-            sHandle.position.y = 0.9;
+            const sHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6), new THREE.MeshStandardMaterial({ color: 0x8d5524 }));
+            sHandle.position.y = 0.8;
             const sBlade = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.05), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.7 }));
             sBlade.position.y = 0.25;
             shovelMesh.add(sHandle, sBlade);
-            shovelMesh.position.set(4.0, 1.6, 6.5);
+            shovelMesh.position.set(4.7, 1.6, 5.8);
             houseGroup.add(shovelMesh);
             toolMeshes.shovel = shovelMesh;
 
             const rollerMesh = new THREE.Group();
-            const rollStick = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-            rollStick.position.y = 0.8;
+            const rollStick = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.4), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            rollStick.position.y = 0.7;
             const rollBasket = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.3, 0.3, 0.5, 10),
                 new THREE.MeshStandardMaterial({ color: 0x22c55e, wireframe: true })
@@ -686,7 +734,7 @@
             rollBasket.rotation.z = Math.PI / 2;
             rollBasket.position.y = 0.3;
             rollerMesh.add(rollStick, rollBasket);
-            rollerMesh.position.set(5.2, 1.6, 6.5);
+            rollerMesh.position.set(5.9, 1.6, 5.8);
             houseGroup.add(rollerMesh);
             toolMeshes.roller = rollerMesh;
 
@@ -697,76 +745,18 @@
             cDrum.rotation.x = Math.PI / 2;
             cDrum.position.set(0.7, 0.3, 0);
             cartMesh.add(cBody, cDrum);
-            cartMesh.position.set(6.4, 1.6, 6.5);
+            cartMesh.position.set(7.1, 1.6, 5.8);
             houseGroup.add(cartMesh);
             toolMeshes.cart = cartMesh;
 
             houseGroup.position.copy(housePos);
             scene.add(houseGroup);
 
-            const chestGroup = new THREE.Group();
-            const chestBody = new THREE.Mesh(
-                new THREE.BoxGeometry(2.2, 1.1, 1.4),
-                new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.6 })
-            );
-            chestBody.position.y = 0.55;
-            
-            const chestLid = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.7, 0.7, 2.2, 16, 1, false, 0, Math.PI),
-                new THREE.MeshStandardMaterial({ color: 0x3d2311, roughness: 0.5 })
-            );
-            chestLid.rotation.z = Math.PI / 2;
-            chestLid.position.set(0, 1.1, 0);
-
-            const lock = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 0.4, 0.2),
-                new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 })
-            );
-            lock.position.set(0, 0.85, 0.71);
-            chestGroup.add(chestBody, chestLid, lock);
-            chestGroup.position.copy(chestPos);
-            scene.add(chestGroup);
-
-            const pcGroup = new THREE.Group();
-            const pcDesk = new THREE.Mesh(
-                new THREE.BoxGeometry(2.4, 1.0, 1.3),
-                new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.5 })
-            );
-            pcDesk.position.y = 0.5;
-
-            const pcCase = new THREE.Mesh(
-                new THREE.BoxGeometry(0.5, 0.9, 1.0),
-                new THREE.MeshStandardMaterial({ color: 0x1e1e1e, metalness: 0.6 })
-            );
-            pcCase.position.set(0.75, 1.45, 0);
-
-            const monitorStand = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 0.35, 0.3),
-                new THREE.MeshStandardMaterial({ color: 0x222222 })
-            );
-            monitorStand.position.set(-0.2, 1.17, 0);
-
-            const monitorScreen = new THREE.Mesh(
-                new THREE.BoxGeometry(1.4, 0.85, 0.12),
-                new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x0055ff, emissiveIntensity: 0.7 })
-            );
-            monitorScreen.position.set(-0.2, 1.7, 0);
-
-            const keyboard = new THREE.Mesh(
-                new THREE.BoxGeometry(0.9, 0.05, 0.4),
-                new THREE.MeshStandardMaterial({ color: 0x222222 })
-            );
-            keyboard.position.set(-0.2, 1.03, 0.3);
-
-            pcGroup.add(pcDesk, pcCase, monitorStand, monitorScreen, keyboard);
-            pcGroup.position.copy(pcPos);
-            scene.add(pcGroup);
-
-            // Оптимізована кількість дерев (300 шт. замість 550)
+            // ДЕРЕВА У ЛІСІ
             const treeCount = 300;
             const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 5);
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
-            const crownGeo = new THREE.DodecahedronGeometry(3.6, 0); // зменшено полігони для продуктивності
+            const crownGeo = new THREE.DodecahedronGeometry(3.6, 0);
             const crownMat = new THREE.MeshStandardMaterial({ color: 0x1e4d18, roughness: 0.8 });
 
             const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
@@ -778,7 +768,7 @@
                 attempts++;
                 let tx = (Math.random() - 0.5) * (areaWidth - 20);
                 let tz = (Math.random() - 0.5) * (areaLength - 20);
-                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 20) continue;
+                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 22) continue;
 
                 const s = 0.8 + Math.random() * 0.5;
                 dummy.position.set(tx, 3.5 * s, tz);
@@ -790,6 +780,8 @@
                 dummy.position.set(tx, 7.5 * s, tz);
                 dummy.updateMatrix();
                 crowns.setMatrixAt(placed, dummy.matrix);
+
+                treePositions.push(new THREE.Vector3(tx, 0, tz));
                 placed++;
             }
             scene.add(trunks, crowns);
@@ -876,7 +868,7 @@
             const dummy = new THREE.Object3D();
             let created = 0, tries = 0;
 
-            let savedData = localStorage.getItem('cleanItUpAloneOptimizedSave');
+            let savedData = localStorage.getItem('cleanItUpAloneAutoDoorSave');
             let savedChestnutState = null;
             if (savedData) {
                 let parsed = JSON.parse(savedData);
@@ -915,7 +907,7 @@
             goldenAcornInstances = new THREE.InstancedMesh(geom, mat, totalGoldenAcorns);
             goldenAcornInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-            let savedData = localStorage.getItem('cleanItUpAloneOptimizedSave');
+            let savedData = localStorage.getItem('cleanItUpAloneAutoDoorSave');
             let savedGoldenState = null;
             if (savedData) {
                 let parsed = JSON.parse(savedData);
@@ -952,11 +944,11 @@
                 chestnutPrice, skillPriceLevel, skillBagLevel, skillMaxEnergyLevel, skillSpeedLevel,
                 toolUpgrades, ownedTools, activeTool, toolCargo, perks, chestnutState, goldenState
             };
-            localStorage.setItem('cleanItUpAloneOptimizedSave', JSON.stringify(data));
+            localStorage.setItem('cleanItUpAloneAutoDoorSave', JSON.stringify(data));
         }
 
         function loadGameData() {
-            const saved = localStorage.getItem('cleanItUpAloneOptimizedSave');
+            const saved = localStorage.getItem('cleanItUpAloneAutoDoorSave');
             if (saved) {
                 const data = JSON.parse(saved);
                 money = data.money || 0;
@@ -1218,6 +1210,8 @@
             bagGroup.position.copy(player.position);
             scene.add(bagGroup);
 
+            collisionObjects.push({ type: 'cylinder', center: player.position.clone(), radius: 0.7 });
+
             bags.push({ mesh: bagGroup, count: 0, capacity: bagCapacity });
             showToast("Порожній мішок встановлено!");
             updateUI();
@@ -1270,6 +1264,7 @@
                 }
 
                 inventory += bag.count;
+                collisionObjects = collisionObjects.filter(obj => obj.center !== bag.mesh.position);
                 scene.remove(bag.mesh);
                 bags.splice(nearestBagIndex, 1);
                 nearestBagIndex = -1;
@@ -1761,15 +1756,46 @@
             let newX = player.position.x - moveDir.z * currentSpeed * fwd.x + moveDir.x * currentSpeed * right.x;
             let newZ = player.position.z - moveDir.z * currentSpeed * fwd.z + moveDir.x * currentSpeed * right.z;
 
-            let pPos = new THREE.Vector3(newX, 0, newZ);
+            // АВТОМАТИЧНЕ ВІДЧИНЕННЯ ДВЕРЕЙ (якщо гравець близько до входу)
             let houseWorldPos = housePos.clone();
-            let pcWorldPos = houseWorldPos.clone().add(pcPos);
-            let chestWorldPos = houseWorldPos.clone().add(chestPos);
-            let bedWorldPos = houseWorldPos.clone().add(bedPos);
+            let distToDoor = Math.hypot(player.position.x - houseWorldPos.x, player.position.z - (houseWorldPos.z + 4.5));
+            if (doorMesh) {
+                let targetDoorRotation = distToDoor < 4.0 ? -Math.PI / 2 : 0; // Відчиняється на 90 градусів
+                doorMesh.rotation.y += (targetDoorRotation - doorMesh.rotation.y) * 0.1;
+            }
 
-            if (pPos.distanceTo(pcWorldPos) < 1.6 || pPos.distanceTo(chestWorldPos) < 1.6 || pPos.distanceTo(bedWorldPos) < 1.5) {
-                newX = player.position.x;
-                newZ = player.position.z;
+            const playerRadius = 0.5;
+
+            for (let obj of collisionObjects) {
+                if (obj.type === 'box') {
+                    let minX = obj.center.x - obj.sizeX / 2 - playerRadius;
+                    let maxX = obj.center.x + obj.sizeX / 2 + playerRadius;
+                    let minZ = obj.center.z - obj.sizeZ / 2 - playerRadius;
+                    let maxZ = obj.center.z + obj.sizeZ / 2 + playerRadius;
+
+                    if (newX > minX && newX < maxX && newZ > minZ && newZ < maxZ) {
+                        let isHouseDoor = (obj.center.equals(housePos) && newZ > housePos.z + 3.8 && Math.abs(newX - housePos.x) < 1.4);
+                        if (!isHouseDoor) {
+                            newX = player.position.x;
+                            newZ = player.position.z;
+                        }
+                    }
+                } else if (obj.type === 'cylinder') {
+                    let dist = Math.hypot(newX - obj.center.x, newZ - obj.center.z);
+                    if (dist < obj.radius + playerRadius) {
+                        newX = player.position.x;
+                        newZ = player.position.z;
+                    }
+                }
+            }
+
+            for (let tPos of treePositions) {
+                let dist = Math.hypot(newX - tPos.x, newZ - tPos.z);
+                if (dist < 0.7 + playerRadius) {
+                    newX = player.position.x;
+                    newZ = player.position.z;
+                    break;
+                }
             }
 
             const margin = 3.0;
@@ -1905,7 +1931,9 @@
             }
 
             document.getElementById('btn-action').style.display = player.position.distanceTo(chestPos) < 5.5 ? "block" : "none";
-            document.getElementById('btn-pc').style.display = player.position.distanceTo(pcPos) < 5.0 ? "block" : "none";
+            
+            let pcAbsolutePos = housePos.clone().add(pcPos);
+            document.getElementById('btn-pc').style.display = player.position.distanceTo(pcAbsolutePos) < 4.5 ? "block" : "none";
             
             let bedAbsolutePos = housePos.clone().add(bedPos);
             document.getElementById('btn-rest').style.display = player.position.distanceTo(bedAbsolutePos) < 3.2 ? "block" : "none";
