@@ -85,7 +85,7 @@
         }
         #btn-bag:active { transform: scale(0.9); background: rgba(46, 125, 50, 0.7); }
         
-        /* Кнопка збору каштана */
+        /* Кнопка ручного збору каштана (✋) */
         #btn-collect {
             display: none;
             position: absolute;
@@ -335,7 +335,7 @@
         let bags = [];
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, gameTime = 8 * 60, energy = 100;
         
-        let chestnutPrice = 0.7; // Початкова ціна за 1 каштан
+        let chestnutPrice = 0.7;
         let skillPriceLevel = 0;
         let skillBagLevel = 0;
         let skillAutoLevel = 0;
@@ -346,14 +346,15 @@
         let lookTouchId = null;
         let isModalOpen = false;
 
-        const areaWidth = 350;
-        const areaLength = 450;
-        const housePos = new THREE.Vector3(50, 0, -40);
+        // СВІТ ЗБІЛЬШЕНО В 2 РАЗИ
+        const areaWidth = 700;
+        const areaLength = 900;
+        const housePos = new THREE.Vector3(80, 0, -80);
         const chestPos = new THREE.Vector3(housePos.x - 12, 0, housePos.z);
         const pcPos = new THREE.Vector3(housePos.x + 8, 0, housePos.z);
         
         let chestnutInstances;
-        const totalChestnuts = 45000;
+        const totalChestnuts = 90000; // Пропорційно більше каштанів
         let chestnutData = [];
         let targetedChestnutIndex = -1;
         let nearestBagIndex = -1;
@@ -387,7 +388,7 @@
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.9));
             const dirLight = new THREE.DirectionalLight(0xfffaed, 0.8);
-            dirLight.position.set(100, 300, 200);
+            dirLight.position.set(200, 500, 300);
             scene.add(dirLight);
 
             const floor = new THREE.Mesh(
@@ -401,7 +402,7 @@
             generateChestnuts();
 
             player = new THREE.Object3D();
-            player.position.set(20, 0, 20);
+            player.position.set(40, 0, 40);
             scene.add(player);
             
             camera.position.set(0, 1.65, 0);
@@ -517,8 +518,8 @@
             pcGroup.position.copy(pcPos);
             scene.add(pcGroup);
 
-            // Ліс
-            const treeCount = 260;
+            // Густий великий ліс (550 дерев)
+            const treeCount = 550;
             const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 6);
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
             const crownGeo = new THREE.DodecahedronGeometry(3.8, 1);
@@ -529,7 +530,7 @@
             const dummy = new THREE.Object3D();
 
             let placed = 0, attempts = 0;
-            while (placed < treeCount && attempts < 1500) {
+            while (placed < treeCount && attempts < 3000) {
                 attempts++;
                 let tx = (Math.random() - 0.5) * (areaWidth - 20);
                 let tz = (Math.random() - 0.5) * (areaLength - 20);
@@ -626,9 +627,6 @@
             updateUI();
         }
 
-        // РОЗУМНА ВЗАЄМОДІЯ З МІШКОМ:
-        // Якщо кишені мають каштани і мішок не повний -> сиплемо в мішок.
-        // Якщо кишені повні або мішок повний -> підіймаємо мішок у руки!
         function handleBagInteract() {
             if (nearestBagIndex === -1) return;
             let bag = bags[nearestBagIndex];
@@ -641,9 +639,7 @@
                 showToast(`Пересипано у мішок: ${toTransfer} шт. (У мішку: ${bag.count}/${bag.capacity})`, "#4CAF50");
                 updateUI();
             } else {
-                // Якщо кишені порожні АБО мішок заповнений (нема куди сипати) — підіймаємо мішок у руки!
                 if (inventory + bag.count > maxInventory) {
-                    // Якщо в кишенях немає місця для всього мішка, розширюємо кишені або переносимо стільки скільки влізе, решта залишається в мішку
                     let canTake = maxInventory - inventory;
                     if (canTake > 0) {
                         inventory += canTake;
@@ -776,6 +772,8 @@
         }
 
         const dummyMatrix = new THREE.Object3D();
+        
+        // РУЧНИЙ ЗБІР ЧЕРЕЗ КНОПКУ ✋
         function collectTargetedChestnut() {
             let power = 1 + skillPowerLevel;
             let collectedCount = 0;
@@ -932,7 +930,7 @@
             player.position.x = Math.max(-areaWidth / 2 + margin, Math.min(areaWidth / 2 - margin, newX));
             player.position.z = Math.max(-areaLength / 2 + margin, Math.min(areaLength / 2 - margin, newZ));
 
-            // Автозбір
+            // Автозбір (працює паралельно фоном, якщо вивчений)
             if (skillAutoLevel > 0 && inventory < maxInventory && chestnutInstances) {
                 autoCollectTimer++;
                 let interval = Math.max(20, 90 - skillAutoLevel * 15);
@@ -973,7 +971,6 @@
             const bagInteractBtn = document.getElementById('btn-bag-interact');
             if (nearestBagIndex !== -1) {
                 bagInteractBtn.style.display = "flex";
-                // Якщо кишені повні або мішок повний — показуємо іконку підняття (📦), інакше стрілку вниз (📥)
                 if (inventory > 0 && bags[nearestBagIndex].count < bags[nearestBagIndex].capacity) {
                     bagInteractBtn.textContent = "📥";
                 } else {
@@ -983,6 +980,7 @@
                 bagInteractBtn.style.display = "none";
             }
 
+            // Ручний приціл для збору кнопкою ✋ (завжди активний незалежно від автозбору)
             targetedChestnutIndex = -1;
             if (inventory < maxInventory && chestnutInstances) {
                 raycaster.setFromCamera(screenCenter, camera);
@@ -1007,7 +1005,7 @@
             }
 
             const collectBtn = document.getElementById('btn-collect');
-            if (targetedChestnutIndex !== -1 && inventory < maxInventory && skillAutoLevel === 0) {
+            if (targetedChestnutIndex !== -1 && inventory < maxInventory) {
                 collectBtn.style.display = "flex";
             } else {
                 collectBtn.style.display = "none";
