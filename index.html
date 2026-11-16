@@ -63,25 +63,27 @@
         #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
         #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
 
-        .movable-btn {
-            position: absolute;
-            color: white;
-            border: none;
-            padding: 12px 16px;
-            font-size: 14px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            cursor: pointer;
-            z-index: 10;
-            touch-action: manipulation;
-        }
+        /* Стильна кругла кнопка мішка */
         #btn-bag {
+            position: absolute;
             bottom: 25px;
             right: 20px;
-            background: linear-gradient(135deg, #2e7d32, #4CAF50);
-            font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.3);
+            width: 65px;
+            height: 65px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 25;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            touch-action: manipulation;
+            cursor: pointer;
         }
+        #btn-bag:active { transform: scale(0.9); background: rgba(46, 125, 50, 0.7); }
         
         #btn-collect {
             display: none;
@@ -282,7 +284,7 @@
     <div id="toast"></div>
 
     <button id="btn-collect" onclick="collectTargetedChestnut()">✋</button>
-    <button class="movable-btn" id="btn-bag" onclick="placeBag()">Поставити мішок</button>
+    <button id="btn-bag" onclick="placeBag()">🎒</button>
     <button id="btn-action" class="action-btn" onclick="throwIntoChest()">Здати в скриню</button>
     <button id="btn-pc" class="action-btn" onclick="openPCModal()">Комп'ютер (Навички)</button>
 
@@ -295,7 +297,6 @@
         let bags = [];
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, gameTime = 8 * 60, energy = 100;
         
-        // Рівні навичок
         let skillAutoLevel = 0;
         let skillRadiusLevel = 0;
         let skillPowerLevel = 0;
@@ -774,9 +775,12 @@
         function updateGameLogic() {
             if (isModalOpen) {
                 document.getElementById('btn-collect').style.display = "none";
+                document.getElementById('btn-bag').style.display = "none";
                 document.getElementById('btn-pc').style.display = "none";
                 document.getElementById('btn-action').style.display = "none";
                 return;
+            } else {
+                document.getElementById('btn-bag').style.display = "flex";
             }
 
             const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
@@ -789,11 +793,10 @@
             player.position.x = Math.max(-areaWidth / 2 + margin, Math.min(areaWidth / 2 - margin, newX));
             player.position.z = Math.max(-areaLength / 2 + margin, Math.min(areaLength / 2 - margin, newZ));
 
-            // АВТОМАТИЧНИЙ ЗБІР (чим вище рівень skillAutoLevel, тим більший радіус магніту)
             if (skillAutoLevel > 0 && inventory < maxInventory && chestnutInstances) {
                 let autoRadius = 2.0 + skillAutoLevel * 1.2 + skillRadiusLevel * 1.0;
                 let collectedThisFrame = 0;
-                let maxPerFrame = skillAutoLevel; // Вищий рівень дозволяє всмоктувати більше за кадр
+                let maxPerFrame = skillAutoLevel;
 
                 for (let i = 0; i < chestnutData.length && inventory < maxInventory; i++) {
                     if (collectedThisFrame >= maxPerFrame) break;
