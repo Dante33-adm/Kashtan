@@ -63,7 +63,7 @@
         #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
         #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
 
-        /* Стильна кругла кнопка мішка */
+        /* Кнопка встановлення мішка */
         #btn-bag {
             position: absolute;
             bottom: 25px;
@@ -85,6 +85,7 @@
         }
         #btn-bag:active { transform: scale(0.9); background: rgba(46, 125, 50, 0.7); }
         
+        /* Кнопка збору каштана */
         #btn-collect {
             display: none;
             position: absolute;
@@ -105,6 +106,28 @@
             cursor: pointer;
         }
         #btn-collect:active { transform: scale(0.9); background: rgba(76, 175, 80, 0.7); }
+
+        /* Кнопка підняття мішка назад */
+        #btn-take-bag {
+            display: none;
+            position: absolute;
+            top: 95px;
+            right: 20px;
+            width: 65px;
+            height: 65px;
+            background: rgba(180, 80, 0, 0.75);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            font-size: 26px;
+            align-items: center;
+            justify-content: center;
+            z-index: 25;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            touch-action: manipulation;
+            cursor: pointer;
+        }
+        #btn-take-bag:active { transform: scale(0.9); }
 
         .action-btn {
             display: none;
@@ -246,7 +269,7 @@
         <div>У руках: <b><span id="inventory-display">0</span> / <span id="max-inv-display">5</span></b></div>
     </div>
 
-    <!-- Модальне вікно ПК (Дерево навичок) -->
+    <!-- Модальне вікно ПК -->
     <div id="skills-modal">
         <h2>💻 Термінал прокачування навичок</h2>
         <div class="skill-item">
@@ -255,6 +278,13 @@
                 <div id="desc-inv">Збільшити ліміт (+5)</div>
             </div>
             <button class="skill-btn" onclick="upgradeSkill('inv')">Вивчити</button>
+        </div>
+        <div class="skill-item">
+            <div class="skill-info">
+                <div>Місткість мішка</div>
+                <div id="desc-bag">Збільшити об'єм мішків</div>
+            </div>
+            <button class="skill-btn" onclick="upgradeSkill('bag')">Вивчити</button>
         </div>
         <div class="skill-item">
             <div class="skill-info">
@@ -284,6 +314,7 @@
     <div id="toast"></div>
 
     <button id="btn-collect" onclick="collectTargetedChestnut()">✋</button>
+    <button id="btn-take-bag" onclick="takeBagBack()">📦</button>
     <button id="btn-bag" onclick="placeBag()">🎒</button>
     <button id="btn-action" class="action-btn" onclick="throwIntoChest()">Здати в скриню</button>
     <button id="btn-pc" class="action-btn" onclick="openPCModal()">Комп'ютер (Навички)</button>
@@ -297,6 +328,7 @@
         let bags = [];
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, gameTime = 8 * 60, energy = 100;
         
+        let skillBagLevel = 0;
         let skillAutoLevel = 0;
         let skillRadiusLevel = 0;
         let skillPowerLevel = 0;
@@ -315,6 +347,7 @@
         const totalChestnuts = 35000;
         let chestnutData = [];
         let targetedChestnutIndex = -1;
+        let nearestBagIndex = -1;
 
         window.addEventListener('DOMContentLoaded', () => {
             loadGameData();
@@ -516,7 +549,7 @@
         }
 
         function saveGameData() {
-            const data = { money, acorns, maxInventory, energy, skillAutoLevel, skillRadiusLevel, skillPowerLevel };
+            const data = { money, acorns, maxInventory, energy, skillBagLevel, skillAutoLevel, skillRadiusLevel, skillPowerLevel };
             localStorage.setItem('cleanItUpAloneSave', JSON.stringify(data));
         }
 
@@ -528,6 +561,7 @@
                 acorns = data.acorns || 3;
                 maxInventory = data.maxInventory || 5;
                 energy = data.energy || 100;
+                skillBagLevel = data.skillBagLevel || 0;
                 skillAutoLevel = data.skillAutoLevel || 0;
                 skillRadiusLevel = data.skillRadiusLevel || 0;
                 skillPowerLevel = data.skillPowerLevel || 0;
@@ -539,17 +573,51 @@
                 showToast("Руки порожні! Спочатку назбирай каштанів.", "#ff9800");
                 return;
             }
-            const bagMesh = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.4, 0.5, 0.9, 8),
-                new THREE.MeshStandardMaterial({ color: 0xc2a378, roughness: 0.9 })
+            
+            // Максимальна місткість мішка залежить від прокачування (+10 за рівень)
+            let bagCapacity = maxInventory + skillBagLevel * 10;
+
+            // Візуальна модель покращеного мішка
+            let bagGroup = new THREE.Group();
+            let bagBody = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.45 + skillBagLevel * 0.05, 0.55 + skillBagLevel * 0.05, 1.0 + skillBagLevel * 0.1, 8),
+                new THREE.MeshStandardMaterial({ color: skillBagLevel > 1 ? 0x8d6e63 : 0xc2a378, roughness: 0.9 })
             );
-            bagMesh.position.copy(player.position);
-            bagMesh.position.y = 0.45;
-            scene.add(bagMesh);
-            bags.push({ mesh: bagMesh, count: inventory });
+            bagBody.position.y = 0.5;
+
+            // Зав'язка мішка
+            let bagTop = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.2, 0.3, 0.2, 8),
+                new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.8 })
+            );
+            bagTop.position.y = 1.05 + skillBagLevel * 0.05;
+
+            bagGroup.add(bagBody, bagTop);
+            bagGroup.position.copy(player.position);
+            scene.add(bagGroup);
+
+            bags.push({ mesh: bagGroup, count: inventory, capacity: bagCapacity });
             showToast(`Мішок поставлено (каштанів: ${inventory})`);
             inventory = 0;
             updateUI();
+        }
+
+        // Підняти мішок назад у руки
+        function takeBagBack() {
+            if (nearestBagIndex !== -1) {
+                let bag = bags[nearestBagIndex];
+                if (inventory + bag.count > maxInventory) {
+                    showToast("У руках недостатньо місця для каштанів з мішка!", "#f44336");
+                    return;
+                }
+                inventory += bag.count;
+                scene.remove(bag.mesh);
+                bags.splice(nearestBagIndex, 1);
+                nearestBagIndex = -1;
+                document.getElementById('btn-take-bag').style.display = 'none';
+                showToast("Мішок піднято назад у руки!", "#4CAF50");
+                updateUI();
+            }
         }
 
         function throwIntoChest() {
@@ -563,7 +631,7 @@
             }
 
             if (totalToProcess === 0) {
-                showToast("Немає каштанів у руках чи в мішках поруч!", "#f44336");
+                showToast("Немає каштанів у руках чи в мішках ближче ніж 12м до скрині!", "#f44336");
                 return;
             }
 
@@ -590,6 +658,10 @@
             let invCost = maxInventory * 15;
             document.getElementById('desc-inv').textContent = `Збільшити ліміт (+5) | Ціна: $${invCost.toFixed(2)}`;
             
+            let bagCost = (skillBagLevel + 1) * 60;
+            let bagCap = maxInventory + (skillBagLevel + 1) * 10;
+            document.getElementById('desc-bag').textContent = `Місткість мішка: ${bagCap} шт. (Рівень ${skillBagLevel}) | Ціна: $${bagCost}`;
+
             let autoCost = (skillAutoLevel + 1) * 80;
             document.getElementById('desc-auto').textContent = `Рівень ${skillAutoLevel} | Ціна: $${autoCost}`;
             
@@ -610,6 +682,13 @@
                     maxInventory += 5;
                     showToast(`Інвентар збільшено до ${maxInventory}!`, "#4CAF50");
                 } else { showToast(`Не вистачає грошей! Потрібно: $${cost.toFixed(2)}`, "#f44336"); }
+            } else if (type === 'bag') {
+                let cost = (skillBagLevel + 1) * 60;
+                if (money >= cost) {
+                    money -= cost;
+                    skillBagLevel++;
+                    showToast(`Місткість мішків покращено!`, "#4CAF50");
+                } else { showToast(`Не вистачає грошей! Потрібно: $${cost}`, "#f44336"); }
             } else if (type === 'auto') {
                 let cost = (skillAutoLevel + 1) * 80;
                 if (money >= cost) {
@@ -776,6 +855,7 @@
             if (isModalOpen) {
                 document.getElementById('btn-collect').style.display = "none";
                 document.getElementById('btn-bag').style.display = "none";
+                document.getElementById('btn-take-bag').style.display = "none";
                 document.getElementById('btn-pc').style.display = "none";
                 document.getElementById('btn-action').style.display = "none";
                 return;
@@ -793,6 +873,7 @@
             player.position.x = Math.max(-areaWidth / 2 + margin, Math.min(areaWidth / 2 - margin, newX));
             player.position.z = Math.max(-areaLength / 2 + margin, Math.min(areaLength / 2 - margin, newZ));
 
+            // Автозбір
             if (skillAutoLevel > 0 && inventory < maxInventory && chestnutInstances) {
                 let autoRadius = 2.0 + skillAutoLevel * 1.2 + skillRadiusLevel * 1.0;
                 let collectedThisFrame = 0;
@@ -818,6 +899,22 @@
                     chestnutInstances.instanceMatrix.needsUpdate = true;
                     updateUI();
                 }
+            }
+
+            // Перевірка найближчого мішка щоб підняти
+            nearestBagIndex = -1;
+            for (let i = 0; i < bags.length; i++) {
+                if (player.position.distanceTo(bags[i].mesh.position) < 3.0) {
+                    nearestBagIndex = i;
+                    break;
+                }
+            }
+
+            const takeBagBtn = document.getElementById('btn-take-bag');
+            if (nearestBagIndex !== -1) {
+                takeBagBtn.style.display = "flex";
+            } else {
+                takeBagBtn.style.display = "none";
             }
 
             targetedChestnutIndex = -1;
