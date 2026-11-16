@@ -130,7 +130,7 @@
             border: 2px solid #90CAF9;
         }
 
-        /* Модальне вікно комп'ютера */
+        /* Модальне вікно ПК */
         #skills-modal {
             display: none;
             position: absolute;
@@ -352,6 +352,7 @@
         }
 
         function buildEnvironment() {
+            // Будинок
             const houseGroup = new THREE.Group();
             const walls = new THREE.Mesh(
                 new THREE.BoxGeometry(14, 6, 12),
@@ -370,6 +371,7 @@
             houseGroup.position.copy(housePos);
             scene.add(houseGroup);
 
+            // Скриня
             const chestGroup = new THREE.Group();
             const chestBody = new THREE.Mesh(
                 new THREE.BoxGeometry(2, 1.2, 1.3),
@@ -380,12 +382,52 @@
             chestGroup.position.copy(chestPos);
             scene.add(chestGroup);
 
+            // Комп'ютер (стіл + монітор)
             const pcDesk = new THREE.Mesh(
                 new THREE.BoxGeometry(2, 1, 1.2),
                 new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4 })
             );
             pcDesk.position.set(pcPos.x, 0.5, pcPos.z);
             scene.add(pcDesk);
+
+            const monitor = new THREE.Mesh(
+                new THREE.BoxGeometry(1.2, 0.7, 0.15),
+                new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x0055ff, emissiveIntensity: 0.6 })
+            );
+            monitor.position.set(pcPos.x, 1.4, pcPos.z);
+            scene.add(monitor);
+
+            // Дерева навколо
+            const treeCount = 120;
+            const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 6);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
+            const crownGeo = new THREE.DodecahedronGeometry(3.8, 1);
+            const crownMat = new THREE.MeshStandardMaterial({ color: 0x1e4d18, roughness: 0.8 });
+
+            const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
+            const crowns = new THREE.InstancedMesh(crownGeo, crownMat, treeCount);
+            const dummy = new THREE.Object3D();
+
+            let placed = 0, attempts = 0;
+            while (placed < treeCount && attempts < 800) {
+                attempts++;
+                let tx = (Math.random() - 0.5) * (areaWidth - 20);
+                let tz = (Math.random() - 0.5) * (areaLength - 20);
+                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 14) continue;
+
+                const s = 0.8 + Math.random() * 0.4;
+                dummy.position.set(tx, 3.5 * s, tz);
+                dummy.scale.set(s, s * 1.1, s);
+                dummy.rotation.y = Math.random() * Math.PI;
+                dummy.updateMatrix();
+                trunks.setMatrixAt(placed, dummy.matrix);
+
+                dummy.position.set(tx, 7.5 * s, tz);
+                dummy.updateMatrix();
+                crowns.setMatrixAt(placed, dummy.matrix);
+                placed++;
+            }
+            scene.add(trunks, crowns);
         }
 
         function generateChestnuts() {
@@ -587,7 +629,6 @@
             window.addEventListener('touchstart', (e) => {
                 if (isModalOpen) return;
                 for (let t of e.changedTouches) {
-                    // Якщо дотик справа від джойстика і не на кнопці збору
                     if (t.clientX > window.innerWidth * 0.35 && t.clientX < window.innerWidth - 80 && lookTouchId === null) {
                         lookTouchId = t.identifier;
                         isDraggingLook = true;
