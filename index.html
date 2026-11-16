@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>Clean It Up Alone</title>
+    <title>Clean It Up Alone - Pro</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -130,25 +130,25 @@
             border: 2px solid #90CAF9;
         }
 
-        /* Модальне вікно ПК (Дерево навичок) */
+        /* Модальне вікно ПК */
         #skills-modal {
             display: none;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
+            width: 92%;
             max-width: 480px;
             max-height: 85vh;
             overflow-y: auto;
-            background: rgba(15, 23, 42, 0.96);
-            backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(12px);
             border: 2px solid #3b82f6;
             border-radius: 16px;
             padding: 16px;
             color: white;
             z-index: 100;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
         }
         #skills-modal h2 { margin-top: 0; font-size: 18px; text-align: center; color: #60a5fa; }
         .skill-item {
@@ -161,8 +161,8 @@
             justify-content: space-between;
             align-items: center;
         }
-        .skill-info div:first-child { font-weight: bold; font-size: 13px; }
-        .skill-info div:last-child { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .skill-info div:first-child { font-weight: bold; font-size: 13px; color: #f8fafc; }
+        .skill-info div:last-child { font-size: 11px; color: #94a3b8; margin-top: 3px; }
         .skill-btn {
             background: #2563eb;
             color: white;
@@ -186,7 +186,7 @@
             font-weight: bold;
             font-size: 14px;
             cursor: pointer;
-            margin-top: 5px;
+            margin-top: 8px;
             touch-action: manipulation;
         }
 
@@ -244,9 +244,9 @@
         <div>У руках: <b><span id="inventory-display">0</span> / <span id="max-inv-display">5</span></b></div>
     </div>
 
-    <!-- Модальне вікно покращень (ПК) -->
+    <!-- Модальне вікно ПК (Дерево навичок) -->
     <div id="skills-modal">
-        <h2>💻 Комп'ютерний термінал</h2>
+        <h2>💻 Термінал прокачування навичок</h2>
         <div class="skill-item">
             <div class="skill-info">
                 <div>Місткість кишень</div>
@@ -257,7 +257,7 @@
         <div class="skill-item">
             <div class="skill-info">
                 <div>Автоматичне підбирання</div>
-                <div id="desc-auto">Збір каштанів біля героя</div>
+                <div id="desc-auto">Магніт каштанів</div>
             </div>
             <button class="skill-btn" onclick="upgradeSkill('auto')">Вивчити</button>
         </div>
@@ -270,8 +270,8 @@
         </div>
         <div class="skill-item">
             <div class="skill-info">
-                <div>Кількість за раз</div>
-                <div id="desc-power">Брати кілька каштанів</div>
+                <div>Кількість каштанів за раз</div>
+                <div id="desc-power">Брати кілька штук за клік</div>
             </div>
             <button class="skill-btn" onclick="upgradeSkill('power')">Вивчити</button>
         </div>
@@ -295,10 +295,10 @@
         let bags = [];
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, gameTime = 8 * 60, energy = 100;
         
-        // Рівні нових скілів
-        let skillAuto = 0;       // 0 - вимкнено, 1 - увімкнено
-        let skillRadiusLevel = 0; // базовий радіус 3.5
-        let skillPowerLevel = 0;  // 1 каштан за клік, далі більше
+        // Рівні навичок
+        let skillAutoLevel = 0;
+        let skillRadiusLevel = 0;
+        let skillPowerLevel = 0;
 
         let moveDir = { x: 0, z: 0 }, isDraggingLook = false, prevTouch = { x: 0, y: 0 }, camRotX = 0;
         let lookTouchId = null;
@@ -374,7 +374,6 @@
         }
 
         function buildEnvironment() {
-            // Будинок
             const houseGroup = new THREE.Group();
             const walls = new THREE.Mesh(
                 new THREE.BoxGeometry(14, 6, 12),
@@ -393,63 +392,67 @@
             houseGroup.position.copy(housePos);
             scene.add(houseGroup);
 
-            // ПОКРАЩЕНА МОДЕЛЬКА СКРИНІ
+            // Скриня
             const chestGroup = new THREE.Group();
             const chestBody = new THREE.Mesh(
-                new THREE.BoxGeometry(2.2, 1.2, 1.4),
+                new THREE.BoxGeometry(2.2, 1.1, 1.4),
                 new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.6 })
             );
-            chestBody.position.y = 0.6;
+            chestBody.position.y = 0.55;
             
-            // Напівкругла кришка
             const chestLid = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.7, 0.7, 2.2, 16, 1, false, 0, Math.PI),
                 new THREE.MeshStandardMaterial({ color: 0x3d2311, roughness: 0.5 })
             );
             chestLid.rotation.z = Math.PI / 2;
-            chestLid.position.set(0, 1.2, 0);
+            chestLid.position.set(0, 1.1, 0);
 
-            // Замок скрині
             const lock = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 0.4, 0.2),
                 new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 })
             );
-            lock.position.set(0, 0.9, 0.71);
+            lock.position.set(0, 0.85, 0.71);
             chestGroup.add(chestBody, chestLid, lock);
             chestGroup.position.copy(chestPos);
             scene.add(chestGroup);
 
-            // ПОКРАЩЕНА МОДЕЛЬКА КОМП'ЮТЕРА
+            // Комп'ютер
             const pcGroup = new THREE.Group();
             const pcDesk = new THREE.Mesh(
-                new THREE.BoxGeometry(2.2, 1.0, 1.3),
-                new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4 })
+                new THREE.BoxGeometry(2.4, 1.0, 1.3),
+                new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.5 })
             );
             pcDesk.position.y = 0.5;
 
-            const monitorStand = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 0.4, 0.3),
-                new THREE.MeshStandardMaterial({ color: 0x111111 })
-            );
-            monitorStand.position.set(0, 1.2, 0);
-
-            const monitorScreen = new THREE.Mesh(
-                new THREE.BoxGeometry(1.3, 0.8, 0.15),
-                new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x0066cc, emissiveIntensity: 0.8 })
-            );
-            monitorScreen.position.set(0, 1.7, 0);
-
             const pcCase = new THREE.Mesh(
                 new THREE.BoxGeometry(0.5, 0.9, 1.0),
-                new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5 })
+                new THREE.MeshStandardMaterial({ color: 0x1e1e1e, metalness: 0.6 })
             );
-            pcCase.position.set(0.7, 1.45, 0);
+            pcCase.position.set(0.75, 1.45, 0);
 
-            pcGroup.add(pcDesk, monitorStand, monitorScreen, pcCase);
+            const monitorStand = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.35, 0.3),
+                new THREE.MeshStandardMaterial({ color: 0x222222 })
+            );
+            monitorStand.position.set(-0.2, 1.17, 0);
+
+            const monitorScreen = new THREE.Mesh(
+                new THREE.BoxGeometry(1.4, 0.85, 0.12),
+                new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x0055ff, emissiveIntensity: 0.7 })
+            );
+            monitorScreen.position.set(-0.2, 1.7, 0);
+
+            const keyboard = new THREE.Mesh(
+                new THREE.BoxGeometry(0.9, 0.05, 0.4),
+                new THREE.MeshStandardMaterial({ color: 0x222222 })
+            );
+            keyboard.position.set(-0.2, 1.03, 0.3);
+
+            pcGroup.add(pcDesk, pcCase, monitorStand, monitorScreen, keyboard);
             pcGroup.position.copy(pcPos);
             scene.add(pcGroup);
 
-            // Густий ліс навколо
+            // Ліс
             const treeCount = 180;
             const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 6);
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
@@ -512,7 +515,7 @@
         }
 
         function saveGameData() {
-            const data = { money, acorns, maxInventory, energy, skillAuto, skillRadiusLevel, skillPowerLevel };
+            const data = { money, acorns, maxInventory, energy, skillAutoLevel, skillRadiusLevel, skillPowerLevel };
             localStorage.setItem('cleanItUpAloneSave', JSON.stringify(data));
         }
 
@@ -524,7 +527,7 @@
                 acorns = data.acorns || 3;
                 maxInventory = data.maxInventory || 5;
                 energy = data.energy || 100;
-                skillAuto = data.skillAuto || 0;
+                skillAutoLevel = data.skillAutoLevel || 0;
                 skillRadiusLevel = data.skillRadiusLevel || 0;
                 skillPowerLevel = data.skillPowerLevel || 0;
             }
@@ -586,16 +589,16 @@
             let invCost = maxInventory * 15;
             document.getElementById('desc-inv').textContent = `Збільшити ліміт (+5) | Ціна: $${invCost.toFixed(2)}`;
             
-            let autoCost = skillAuto === 0 ? 100 : 500;
-            document.getElementById('desc-auto').textContent = skillAuto === 0 ? `Увімкнути автозбір | Ціна: $${autoCost}` : `Активно (Рівень ${skillAuto})`;
+            let autoCost = (skillAutoLevel + 1) * 80;
+            document.getElementById('desc-auto').textContent = `Рівень ${skillAutoLevel} | Ціна: $${autoCost}`;
             
             let radCost = (skillRadiusLevel + 1) * 30;
             let currentRad = 3.5 + skillRadiusLevel * 1.5;
-            document.getElementById('desc-radius').textContent = `Радіус: ${currentRad.toFixed(1)}м | Ціна: $${radCost}`;
+            document.getElementById('desc-radius').textContent = `Радіус: ${currentRad.toFixed(1)}м (Рівень ${skillRadiusLevel}) | Ціна: $${radCost}`;
 
             let powerCost = (skillPowerLevel + 1) * 40;
             let currentPower = 1 + skillPowerLevel;
-            document.getElementById('desc-power').textContent = `Брати за раз: ${currentPower} шт. | Ціна: $${powerCost}`;
+            document.getElementById('desc-power').textContent = `Брати за раз: ${currentPower} шт. (Рівень ${skillPowerLevel}) | Ціна: $${powerCost}`;
         }
 
         function upgradeSkill(type) {
@@ -607,11 +610,11 @@
                     showToast(`Інвентар збільшено до ${maxInventory}!`, "#4CAF50");
                 } else { showToast(`Не вистачає грошей! Потрібно: $${cost.toFixed(2)}`, "#f44336"); }
             } else if (type === 'auto') {
-                let cost = skillAuto === 0 ? 100 : 500;
+                let cost = (skillAutoLevel + 1) * 80;
                 if (money >= cost) {
                     money -= cost;
-                    skillAuto++;
-                    showToast(`Автоматичне підбирання активовано!`, "#4CAF50");
+                    skillAutoLevel++;
+                    showToast(`Автозбір покращено (Рівень ${skillAutoLevel})!`, "#4CAF50");
                 } else { showToast(`Не вистачає грошей! Потрібно: $${cost}`, "#f44336"); }
             } else if (type === 'radius') {
                 let cost = (skillRadiusLevel + 1) * 30;
@@ -652,7 +655,6 @@
                 }
             }
 
-            // Якщо прокачано силу збору, підіймаємо додаткові навколо
             if (power > 1 && inventory < maxInventory) {
                 let searchRadius = 2.0;
                 for (let i = 0; i < chestnutData.length && inventory < maxInventory; i++) {
@@ -770,7 +772,12 @@
         const screenCenter = new THREE.Vector2(0, 0);
 
         function updateGameLogic() {
-            if (isModalOpen) return;
+            if (isModalOpen) {
+                document.getElementById('btn-collect').style.display = "none";
+                document.getElementById('btn-pc').style.display = "none";
+                document.getElementById('btn-action').style.display = "none";
+                return;
+            }
 
             const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
             const right = new THREE.Vector3(1, 0, 0).applyQuaternion(player.quaternion);
@@ -782,28 +789,34 @@
             player.position.x = Math.max(-areaWidth / 2 + margin, Math.min(areaWidth / 2 - margin, newX));
             player.position.z = Math.max(-areaLength / 2 + margin, Math.min(areaLength / 2 - margin, newZ));
 
-            // АВТОМАТИЧНИЙ ЗБІР (якщо куплено скіл)
-            if (skillAuto > 0 && inventory < maxInventory && chestnutInstances) {
-                let autoRadius = 2.5 + skillRadiusLevel * 1.5;
+            // АВТОМАТИЧНИЙ ЗБІР (чим вище рівень skillAutoLevel, тим більший радіус магніту)
+            if (skillAutoLevel > 0 && inventory < maxInventory && chestnutInstances) {
+                let autoRadius = 2.0 + skillAutoLevel * 1.2 + skillRadiusLevel * 1.0;
+                let collectedThisFrame = 0;
+                let maxPerFrame = skillAutoLevel; // Вищий рівень дозволяє всмоктувати більше за кадр
+
                 for (let i = 0; i < chestnutData.length && inventory < maxInventory; i++) {
+                    if (collectedThisFrame >= maxPerFrame) break;
                     let c = chestnutData[i];
                     if (!c.collected) {
                         let dist = Math.hypot(player.position.x - c.x, player.position.z - c.z);
                         if (dist < autoRadius) {
                             c.collected = true;
                             inventory++;
+                            collectedThisFrame++;
                             dummyMatrix.position.set(0, -999, 0);
                             dummyMatrix.scale.set(0, 0, 0);
                             dummyMatrix.updateMatrix();
                             chestnutInstances.setMatrixAt(i, dummyMatrix.matrix);
-                            chestnutInstances.instanceMatrix.needsUpdate = true;
-                            updateUI();
                         }
                     }
                 }
+                if (collectedThisFrame > 0) {
+                    chestnutInstances.instanceMatrix.needsUpdate = true;
+                    updateUI();
+                }
             }
 
-            // Пошук каштана під прицілом
             targetedChestnutIndex = -1;
             if (inventory < maxInventory && chestnutInstances) {
                 raycaster.setFromCamera(screenCenter, camera);
@@ -828,7 +841,7 @@
             }
 
             const collectBtn = document.getElementById('btn-collect');
-            if (targetedChestnutIndex !== -1 && inventory < maxInventory && skillAuto === 0) {
+            if (targetedChestnutIndex !== -1 && inventory < maxInventory && skillAutoLevel === 0) {
                 collectBtn.style.display = "flex";
             } else {
                 collectBtn.style.display = "none";
