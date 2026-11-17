@@ -268,6 +268,10 @@
             <div class="skill-info"><div>Купити наживку (5 шт.)</div><div>Для риболовлі ($25)</div></div>
             <button class="skill-btn acorn-buy" onclick="buyBait()">Купити ($25)</button>
         </div>
+        <div class="skill-item">
+            <div class="skill-info"><div>Почати риболовлю тут</div><div>Витягнути рибу у судок</div></div>
+            <button class="skill-btn" onclick="startFishingAtPond()">Рибалити 🎣</button>
+        </div>
         <button class="close-btn-modal" onclick="closePondModal()">Закрити</button>
     </div>
 
@@ -344,16 +348,15 @@
         let money = 0, acorns = 3, inventory = 0, maxInventory = 5, energy = 100, maxEnergy = 100;
         let gameTime = 8 * 60;
         let pcWorldPos = new THREE.Vector3(), bedWorldPos = new THREE.Vector3(), kitchenWorldPos = new THREE.Vector3();
-        let rackWorldPos = new THREE.Vector3(housePos_x = 70 - 15, 0, -70), pondShopPos = new THREE.Vector3(70 + 35, 0, -70 - 38);
+        let rackWorldPos = new THREE.Vector3(70 - 15, 0, -70), pondShopPos = new THREE.Vector3(70 + 35, 0, -70 - 38);
 
-        // Прокачування мішків
         let maxAllowedBags = 1;
         let bagCapacity = 30;
 
         let fishTank = [], fishTankCapacity = 15, baitCount = 5, rodLevel = 0;
         let wildAnimals = [], forestSquirrels = [], pondFishMeshes = [], streetLanterns = [];
 
-        let activeTool = 'hands'; // 'hands', 'rake', 'shovel'
+        let activeTool = 'hands';
         let flashlightOn = false, moveDir = { x: 0, z: 0 }, camRotX = 0;
         let isModalOpen = false, isFullscreenMapOpen = false;
 
@@ -473,6 +476,34 @@
             pcWorldPos.copy(pcGroup.position).add(housePos);
             bedWorldPos.copy(bedGroup.position).add(housePos);
             kitchenWorldPos.copy(kitchenGroup.position).add(housePos);
+
+            // Дерева у лісі
+            const treeCount = 280;
+            const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 5);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
+            const crownGeo = new THREE.DodecahedronGeometry(3.6, 0);
+            const crownMat = new THREE.MeshStandardMaterial({ color: 0x1e4d18, roughness: 0.8 });
+
+            const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
+            const crowns = new THREE.InstancedMesh(crownGeo, crownMat, treeCount);
+            const dummy = new THREE.Object3D();
+
+            let placed = 0, attempts = 0;
+            while (placed < treeCount && attempts < 2000) {
+                attempts++;
+                let tx = (Math.random() - 0.5) * (areaWidth - 20);
+                let tz = (Math.random() - 0.5) * (areaLength - 20);
+                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 22) continue;
+                
+                const s = 0.8 + Math.random() * 0.5;
+                dummy.position.set(tx, 3.5 * s, tz); dummy.scale.set(s, s * 1.1, s); dummy.updateMatrix();
+                trunks.setMatrixAt(placed, dummy.matrix);
+
+                dummy.position.set(tx, 7.5 * s, tz); dummy.updateMatrix();
+                crowns.setMatrixAt(placed, dummy.matrix);
+                placed++;
+            }
+            scene.add(trunks, crowns);
 
             // Ліхтарі
             const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, 4, 6);
@@ -621,7 +652,6 @@
             document.getElementById('fullscreen-map-modal').style.display = 'none'; isModalOpen = false;
         }
 
-        // --- МІШКИ ТА АВТОМАТИЧНЕ ЗАСОКТУВАННЯ ---
         function placeEmptyBag() {
             if (bags.length >= maxAllowedBags) {
                 showToast(`Досягнуто ліміт мішків (${maxAllowedBags}). Покращіть у терміналі!`, "#f44336");
@@ -648,7 +678,6 @@
             updateUI(); saveGameData();
         }
 
-        // --- РИБАЛЬСЬКИЙ ПРИЛАВОК ---
         function openPondModal() {
             isModalOpen = true;
             document.getElementById('pond-modal').style.display = 'block';
@@ -695,7 +724,6 @@
             updateUI(); saveGameData();
         }
 
-        // --- УПРАВЛІННЯ ДЛЯ ТЕЛЕФОНУ ---
         function setupTouchControls() {
             const zone = document.getElementById('joystick-zone');
             const thumb = document.getElementById('joystick-thumb');
@@ -834,14 +862,12 @@
             let isNight = hour >= 20 || hour < 6;
             streetLanterns.forEach(l => l.intensity = isNight ? 2.5 : 0);
 
-            // Анімація риби
             pondFishMeshes.forEach(f => {
                 f.angle += f.speed;
                 f.mesh.position.x = f.baseCenter.x + Math.sin(f.angle) * 8;
                 f.mesh.position.z = f.baseCenter.z + Math.cos(f.angle * 0.7) * 4;
             });
 
-            // Анімація тварин (тікають, якщо ближче 3.5м)
             wildAnimals.forEach(a => {
                 let dist = player.position.distanceTo(a.mesh.position);
                 if (dist < 3.5) {
@@ -860,7 +886,7 @@
             player.position.x = Math.max(-areaWidth / 2 + 3, Math.min(areaWidth / 2 - 3, newX));
             player.position.z = Math.max(-areaLength / 2 + 3, Math.min(areaLength / 2 - 3, newZ));
 
-            // --- АВТОМАТИЧНЕ ЗАСОКТУВАННЯ КАШТАНІВ У МІШКИ (Лопата, Граблі або магніт мішка) ---
+            // Авто-засмоктування в мішки (лопата, граблі або радіус 0.6м)
             if (bags.length > 0 && chestnutInstances) {
                 for (let i = 0; i < chestnutData.length; i++) {
                     let c = chestnutData[i];
@@ -882,7 +908,6 @@
                 }
             }
 
-            // Перевірка найближчого мішка для взаємодії
             nearestBagIndex = -1;
             for (let i = 0; i < bags.length; i++) {
                 if (player.position.distanceTo(bags[i].pos) < 3.0) { nearestBagIndex = i; break; }
