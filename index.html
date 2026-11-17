@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clean It Up Alone - Ultimate Forest & Survival Edition</title>
+    <style>
+        * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        #ui {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            color: white;
+            font-size: 13px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+            pointer-events: none;
+            line-height: 1.45;
+            z-index: 5;
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(8px);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .acorn-text { color: #FFD700; font-weight: bold; }
+        .tool-text { color: #38bdf8; font-weight: bold; }
+        .tool-cargo-text { color: #a7f3d0; font-size: 12px; }
+        
+        #fatigue-bar-wrap {
+            width: 130px;
+            height: 8px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 4px;
+            margin: 3px 0 5px 0;
+            overflow: hidden;
+        }
+        #fatigue-bar { width: 100%; height: 100%; background: #4CAF50; transition: width 0.2s, background 0.3s; }
+
+        /* Стильна інтерактивна міні-карта */
+        #minimap-container {
+            position: absolute;
+            top: 12px;
+            left: 215px;
+            width: 120px;
+            height: 120px;
+            background: rgba(10, 15, 30, 0.85);
+            border: 2px solid #38bdf8;
+            border-radius: 12px;
+            overflow: hidden;
+            z-index: 15;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+        #minimap-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Повноекранна карта при натисканні */
+        #fullscreen-map-modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            height: 85vh;
+            max-width: 700px;
+            background: rgba(10, 15, 30, 0.96);
+            backdrop-filter: blur(16px);
+            border: 2px solid #38bdf8;
+            border-radius: 20px;
+            z-index: 200;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.95);
+            flex-direction: column;
+            align-items: center;
+        }
+        #fullscreen-map-canvas {
+            width: 100%;
+            flex: 1;
+            background: #111827;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        #audio-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            z-index: 25;
+            pointer-events: auto;
+        }
+        .audio-btn {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .audio-btn.muted { background: rgba(239, 68, 68, 0.85); border-color: #f87171; }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 4px rgba(0,0,0,0.8);
+        }
+        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
+        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
+
+        .circle-btn {
+            position: absolute;
+            width: 62px;
+            height: 62px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 25;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            touch-action: manipulation;
+            cursor: pointer;
+            color: white;
+        }
+        .circle-btn:active { transform: scale(0.9); }
+
+        #btn-bag { bottom: 20px; right: 20px; }
+        #btn-tool-use { bottom: 92px; right: 20px; display: none; background: rgba(2, 132, 199, 0.8); }
+        #btn-collect { top: 60px; right: 20px; display: none; }
+        #btn-bag-interact { top: 132px; right: 20px; display: none; background: rgba(180, 80, 0, 0.75); }
+        #btn-torch { top: 204px; right: 20px; font-size: 22px; }
+
+        .action-btn {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 14px 26px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 14px;
+            z-index: 50;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.8);
+            cursor: pointer;
+            touch-action: manipulation;
+            text-align: center;
+            white-space: nowrap;
+        }
+        #btn-action { bottom: 25px; background: linear-gradient(135deg, #6d360d, #9c521c); border: 2px solid #ffd54f; }
+        #btn-pc { bottom: 95px; background: linear-gradient(135deg, #1d4ed8, #3b82f6); border: 2px solid #93c5fd; }
+        #btn-rest { bottom: 165px; background: linear-gradient(135deg, #047857, #10b981); border: 2px solid #6ee7b7; }
+        #btn-coffee { bottom: 235px; background: linear-gradient(135deg, #b45309, #d97706); border: 2px solid #fcd34d; }
+        #btn-rack { bottom: 95px; background: linear-gradient(135deg, #4338ca, #6366f1); border: 2px solid #a5b4fc; }
+        #btn-pond { bottom: 165px; background: linear-gradient(135deg, #0284c7, #0ea5e9); border: 2px solid #38bdf8; }
+
+        /* Стильний ПК-інтерфейс */
+        #skills-modal, #rack-modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: 620px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: rgba(10, 15, 30, 0.96);
+            backdrop-filter: blur(16px);
+            border: 2px solid #3b82f6;
+            border-radius: 20px;
+            padding: 20px;
+            color: #f8fafc;
+            z-index: 100;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.95);
+        }
+        #rack-modal { border-color: #818cf8; max-width: 440px; }
+        
+        .pc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .pc-header h2 { margin: 0; font-size: 20px; color: #60a5fa; display: flex; align-items: center; gap: 8px; }
+        .pc-wallet { background: rgba(59, 130, 246, 0.2); padding: 6px 12px; border-radius: 10px; font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.4); }
+
+        .tab-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1;
+            min-width: 75px;
+            padding: 8px 6px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active { background: #2563eb; border-color: #60a5fa; color: white; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
+
+        .tool-selector-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .tool-sub-btn {
+            flex: 1;
+            min-width: 75px;
+            padding: 7px 4px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #cbd5e1;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .tool-sub-btn.active { background: #0284c7; border-color: #38bdf8; color: white; }
+
+        .tool-header-card {
+            background: rgba(30, 58, 138, 0.35);
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skill-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .skill-info div:first-child { font-weight: bold; font-size: 14px; color: #f8fafc; }
+        .skill-info div:last-child { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        
+        .skill-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 9px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            touch-action: manipulation;
+            white-space: nowrap;
+        }
+        .skill-btn.acorn-buy { background: #d97706; }
+        .skill-btn.owned { background: #059669; }
+        .skill-btn:disabled { background: #334155; opacity: 0.5; cursor: not-allowed; }
+        
+        .close-btn-modal {
+            width: 100%;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 12px;
+            touch-action: manipulation;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+
+        #toast {
+            position: absolute;
+            top: 60px;
+            right: 95px;
+            background: rgba(0, 0, 0, 0.88);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            max-width: 260px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 30;
+            border-left: 4px solid #4CAF50;
+        }
+
+        #joystick-zone {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            width: 110px;
+            height: 110px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            touch-action: none;
+            z-index: 10;
+        }
+        #joystick-thumb {
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="ui">
+        <div>Час: <span id="time-display">08:00</span> <span id="weather-display">☀️</span> <span id="season-display">🍂 Осінь</span></div>
+        <div>Бадьорість:</div>
+        <div id="fatigue-bar-wrap"><div id="fatigue-bar"></div></div>
+        <div>Гроші: <b>$<span id="money-display">0.00</span></b></div>
+        <div class="acorn-text">Золоті жолуді: <span id="acorn-display">3</span></div>
+        <div>У кишенях: <b><span id="inventory-display">0</span> / <span id="max-inv-display">5</span></b> | Гриби: <span id="shrooms-display">0</span></div>
+        <div class="tool-text">Інструмент: <span id="active-tool-display">Руки ✋</span></div>
+        <div class="tool-cargo-text" id="tool-cargo-row" style="display:none;"> В інструменті: <b><span id="tool-cargo-display">0</span> / <span id="tool-cargo-max">0</span></b></div>
+    </div>
+
+    <!-- Міні-карта -->
+    <div id="minimap-container" onclick="openFullscreenMap()" title="Натисніть для збільшення карти">
+        <canvas id="minimap-canvas" width="120" height="120"></canvas>
+    </div>
+
+    <!-- Повноекранна карта -->
+    <div id="fullscreen-map-modal">
+        <div class="pc-header" style="width:100%;">
+            <h2>🗺️ Мапа лісу</h2>
+            <button class="skill-btn" onclick="closeFullscreenMap()" style="padding: 6px 12px;">Закрити X</button>
+        </div>
+        <canvas id="fullscreen-map-canvas"></canvas>
+        <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">🟢 Ви | 🏠 Дім | 💧 Ставок | 🐿️ Білочки</p>
+    </div>
+
+    <div id="audio-controls">
+        <button id="btn-toggle-music" class="audio-btn" onclick="toggleMusic()">🎵 Музика</button>
+        <button id="btn-toggle-sfx" class="audio-btn" onclick="toggleSFX()">🔊 Звуки</button>
+    </div>
+
+    <!-- ПК / Термінал -->
+    <div id="skills-modal">
+        <div class="pc-header">
+            <h2>💻 Термінал виживання & Менеджмент</h2>
+            <div class="pc-wallet">$<span id="pc-money-display">0.00</span></div>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tab-skills" onclick="switchTab('skills')">Персонаж</button>
+            <button class="tab-btn" id="tab-tools" onclick="switchTab('tools')">Інструменти</button>
+            <button class="tab-btn" id="tab-house" onclick="switchTab('house')">Дім</button>
+            <button class="tab-btn" id="tab-survival" onclick="switchTab('survival')">Спорядження</button>
+            <button class="tab-btn" id="tab-dog" onclick="switchTab('dog')">🐕 Пес</button>
+            <button class="tab-btn" id="tab-squirrels" onclick="switchTab('squirrels')">🐿️ Білочки</button>
+            <button class="tab-btn" id="tab-acorns" onclick="switchTab('acorns')">Жолуді</button>
+            <button class="tab-btn" id="tab-quests" onclick="switchTab('quests')">Досягнення</button>
+        </div>
+
+        <div id="panel-skills">
+            <div class="skill-item">
+                <div class="skill-info"><div>Місткість кишень</div><div id="desc-inv">Збільшити ліміт (+5)</div></div>
+                <button class="skill-btn" onclick="upgradeSkill('inv')">Вивчити</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info"><div>Швидкість ходьби</div><div id="desc-speed">Рухатися швидше</div></div>
+                <button class="skill-btn" onclick="upgradeSkill('speed')">Вивчити</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info"><div>Максимальна енергія</div><div id="desc-max-energy">Запас бадьорості (+25%)</div></div>
+                <button class="skill-btn" onclick="upgradeSkill('maxEnergy')">Вивчити</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info"><div>Ціна за каштан</div><div id="desc-price">Збільшити прибуток</div></div>
+                <button class="skill-btn" onclick="upgradeSkill('price')">Вивчити</button>
+            </div>
+            <div class="skill-item">
+                <div class="skill-info"><div>Місткість мішка</div><div id="desc-bag">Об'єм мішків</div></div>
+                <button class="skill-btn" onclick="upgradeSkill('bag')">Вивчити</button>
+            </div>
+        </div>
+
+        <div id="panel-tools" style="display:none;">
+            <div class="tool-selector-bar">
+                <button class="tool-sub-btn active" id="sub-hands" onclick="selectToolTab('hands')">✋ Руки</button>
+                <button class="tool-sub-btn" id="sub-rake" onclick="selectToolTab('rake')">🧹 Граблі</button>
+                <button class="tool-sub-btn" id="sub-shovel" onclick="selectToolTab('shovel')">🪓 Лопата</button>
+                <button class="tool-sub-btn" id="sub-roller" onclick="selectToolTab('roller')">🧺 Збирач</button>
+                <button class="tool-sub-btn" id="sub-cart" onclick="selectToolTab('cart')">🚜 Машинка</button>
+            </div>
+            <div id="tool-details-container"></div>
+        </div>
+
+        <div id="panel-house" style="display:none;">
+            <div class="skill-item"><div class="skill-info"><div>📻 Музичний плеєр & Радіо</div><div>($750)</div></div><button class="skill-btn" id="btn-buy-radio" onclick="buyHouseUpgrade('radio', 750)">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>⚡ Геймерський ПК (RTX)</div><div>Пасивний прибуток ($2500)</div></div><button class="skill-btn" id="btn-buy-pc" onclick="buyHouseUpgrade('rtxpc', 2500)">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>☕ Кавоварка Espresso</div><div>Енергія та буст ($1500)</div></div><button class="skill-btn" id="btn-buy-coffee" onclick="buyHouseUpgrade('coffee', 1500)">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>🏆 Стіна трофеїв</div><div>($1200)</div></div><button class="skill-btn" id="btn-buy-trophy" onclick="buyHouseUpgrade('trophy', 1200)">Купити</button></div>
+        </div>
+
+        <div id="panel-survival" style="display:none;">
+            <div class="skill-item"><div class="skill-info"><div>🚲 Лісовий велосипед</div><div>Швидкий транспорт ($2000)</div></div><button class="skill-btn" id="btn-buy-bike" onclick="buySurvivalItem('bike', 2000)">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>🎣 Рибальська вудка</div><div>Ловля риби ($1200)</div></div><button class="skill-btn" id="btn-buy-rod" onclick="buySurvivalItem('rod', 1200)">Купити</button></div>
+        </div>
+
+        <div id="panel-dog" style="display:none;">
+            <div class="skill-item"><div class="skill-info"><div>🐕 Собака та будки</div><div>Охоронець ($500)</div></div><button class="skill-btn" id="btn-buy-dog" onclick="buyDog()">Купити ($500)</button></div>
+            <div class="skill-item"><div class="skill-info"><div>🍖 Їжа для собаки</div><div id="dog-food-status">Ситість: 100% ($50)</div></div><button class="skill-btn acorn-buy" onclick="feedDog()">Нагодувати</button></div>
+            <div class="skill-item"><div class="skill-info"><div>🎒 Допомога з мішком</div><div>Носить мішок за вами ($300)</div></div><button class="skill-btn" id="btn-dog-cargo" onclick="upgradeDogCargo()">Покращити</button></div>
+        </div>
+
+        <div id="panel-squirrels" style="display:none;">
+            <div class="skill-item"><div class="skill-info"><div>🏠 Будиночок білочок</div><div>Носять жолуді ($400)</div></div><button class="skill-btn" id="btn-buy-sq-house" onclick="buySquirrelHouse()">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>❤️ Створити пару</div><div>Подвійна швидкість ($600)</div></div><button class="skill-btn" id="btn-buy-sq-pair" onclick="buySquirrelPair()">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>⚡ Вправність білочок</div><div>Швидші лапки ($500)</div></div><button class="skill-btn" id="btn-buy-sq-speed" onclick="upgradeSquirrelSpeed()">Покращити</button></div>
+        </div>
+
+        <div id="panel-acorns" style="display:none;">
+            <div class="skill-item"><div class="skill-info"><div>⚡ Енергетик «Вічна бадьорість»</div><div>Менше витрати енергії (5 Жолудів)</div></div><button class="skill-btn acorn-buy" onclick="buyAcornPerk('stamina', 5)">Купити</button></div>
+            <div class="skill-item"><div class="skill-info"><div>🌟 Золотий магніт</div><div>Більше шанс жолудів (8 Жолудів)</div></div><button class="skill-btn acorn-buy" onclick="buyAcornPerk('luck', 8)">Купити</button></div>
+        </div>
+
+        <div id="panel-quests" style="display:none;"><div id="quests-container"></div></div>
+        <button class="close-btn-modal" onclick="closePCModal()">Закрити термінал</button>
+    </div>
+
+    <!-- Модалка стійки -->
+    <div id="rack-modal">
+        <h2>🛠️ Стійка з інструментами</h2>
+        <div id="rack-tools-list"></div>
+        <button class="close-btn-modal" onclick="closeRackModal()">Відійти</button>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="toast"></div>
+
+    <button id="btn-collect" class="circle-btn" onclick="collectTargetedChestnut()">✋</button>
+    <button id="btn-bag-interact" class="circle-btn" onclick="handleBagInteract()">📦</button>
+    <button id="btn-torch" class="circle-btn" onclick="toggleFlashlight()">🔦</button>
+    <button id="btn-tool-use" class="circle-btn" onclick="useActiveTool()">⚡</button>
+    <button id="btn-bag" class="circle-btn" onclick="placeEmptyBag()">🎒</button>
+
+    <button id="btn-action" class="action-btn" onclick="throwIntoChest()">Здати в скриню</button>
+    <button id="btn-pc" class="action-btn" onclick="openPCModal()">💻 Термінал ПК</button>
+    <button id="btn-rest" class="action-btn" onclick="restInBed()">🛏️ Лягти спати</button>
+    <button id="btn-coffee" class="action-btn" onclick="drinkCoffee()">☕ Випити кави</button>
+    <button id="btn-rack" class="action-btn" onclick="openRackModal()">🛠️ Інструменти</button>
+    <button id="btn-pond" class="action-btn" onclick="startFishing()">🎣 Рибалити</button>
+
+    <div id="joystick-zone">
+        <div id="joystick-thumb"></div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, player, ambientLight, dirLight, flashLight, rainSystem;
+        let audioCtx = null, bgmSourceNode = null, bgmGainNode = null;
+        let musicMuted = false, sfxMuted = false;
+
+        let bags = [];
+        let collisionObjects = [];
+        let treePositions = [];
+        let mushrooms = [];
+        let windowLight1, windowLight2, indoorTableLamp;
+        
+        let money = 0, acorns = 3, inventory = 0, maxInventory = 5, energy = 100, maxEnergy = 100;
+        let mushroomCount = 0, totalCollectedStats = 0, foundTsarChestnuts = 0;
+        
+        let gameTime = 8 * 60;
+        let lastRealTimestamp = Date.now();
+        let isRaining = false;
+        
+        let coffeeLastDay = -1, coffeeCountToday = 0, coffeeBuffTimer = 0;
+        let pcWorldPos = new THREE.Vector3(), bedWorldPos = new THREE.Vector3(), kitchenWorldPos = new THREE.Vector3();
+        let rackWorldPos = new THREE.Vector3(), pondWorldPos = new THREE.Vector3(35, 0, -35);
+
+        let dogOwned = false, dogHunger = 100, dogCargoUnlocked = false, dogMesh = null, dogHouseMesh = null;
+        let squirrelHouseOwned = false, squirrelPairOwned = false, squirrelSpeedLevel = 0, squirrelHouseMesh = null;
+
+        let achievements = [
+            { id: 'c500', title: 'Початківець', desc: 'Зібрати 500 каштанів', target: 500, reward: 150, claimed: false },
+            { id: 'c2500', title: 'Збирач-ентузіаст', desc: 'Зібрати 2500 каштанів', target: 2500, reward: 750, claimed: false },
+            { id: 'tsar5', title: 'Царський скарб', desc: 'Зібрати 10 Цар-Каштанів', target: 10, reward: 1500, claimed: false },
+            { id: 'g15', title: 'Золотошукач', desc: 'Знайти 15 золотих жолудів', target: 15, reward: 2000, claimed: false }
+        ];
+        let foundGoldenCount = 0;
+
+        let chestnutPrice = 0.7, skillPriceLevel = 0, skillBagLevel = 0, skillMaxEnergyLevel = 0, skillSpeedLevel = 0;
+        let houseUpgrades = { radio: false, rtxpc: false, coffee: false, trophy: false };
+        let survivalItems = { bike: false, rod: false };
+
+        let ownedTools = { hands: true, rake: false, shovel: false, roller: false, cart: false };
+        let activeTool = 'hands', selectedToolTab = 'hands';
+        let toolCargo = { shovel: 0, roller: 0, cart: 0 };
+
+        let toolUpgrades = {
+            hands: { power: 0, radius: 0, auto: 0, stamina: 0 },
+            rake: { radius: 0, density: 0, push: 0, stamina: 0 },
+            shovel: { capacity: 0, speed: 0, dig: 0, luck: 0 },
+            roller: { width: 0, capacity: 0, flex: 0, stamina: 0 },
+            cart: { speed: 0, radius: 0, capacity: 0, eco: 0 }
+        };
+
+        const TOOL_CONFIGS = {
+            hands: { name: 'Руки ✋', price: 0, desc: 'Базовий ручний збір.', skills: [] },
+            rake: { name: 'Граблі 🧹', price: 600, desc: 'Гребуть каштани у купку.', skills: [] },
+            shovel: { name: 'Лопата 🪓', price: 1500, desc: 'Зачерпує каштани та копає.', skills: [] },
+            roller: { name: 'Збирач 🧺', price: 3500, desc: 'Авто-збір у сітку.', skills: [] },
+            cart: { name: 'Машинка 🚜', price: 8000, desc: 'Міні-машина з вакуумом.', skills: [] }
+        };
+
+        let perks = { stamina: false, luck: false };
+        let toolMeshes = {}, playerToolHand = null, shovelPileMesh = null, toolSwingAnim = 0;
+        let flashlightOn = false, moveDir = { x: 0, z: 0 }, isDraggingLook = false, camRotX = 0;
+        let isModalOpen = false, isFullscreenMapOpen = false;
+
+        const areaWidth = 480, areaLength = 650;
+        const housePos = new THREE.Vector3(70, 0, -70);
+        const chestPos = new THREE.Vector3(housePos.x - 12, 0, housePos.z + 2);
+        
+        let chestnutInstances, totalChestnuts = 45000, chestnutData = [];
+        let goldenAcornInstances, totalGoldenAcorns = 120, goldenAcornData = [];
+        let targetedChestnutIndex = -1, nearestBagIndex = -1;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadGameData();
+            init();
+            animate();
+            initAudio();
+        });
+
+        function initAudio() {
+            window.addEventListener('touchstart', startAudioCtx, { once: true });
+            window.addEventListener('click', startAudioCtx, { once: true });
+        }
+        function startAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.0025);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            document.body.appendChild(renderer.domElement);
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            scene.add(ambientLight);
+
+            dirLight = new THREE.DirectionalLight(0xfffaed, 0.8);
+            dirLight.position.set(200, 500, 300);
+            scene.add(dirLight);
+
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(areaWidth, areaLength),
+                new THREE.MeshStandardMaterial({ color: 0x336b1d, roughness: 0.9 })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            buildEnvironment();
+            generateChestnuts();
+            generateGoldenAcorns();
+
+            player = new THREE.Object3D();
+            player.position.set(housePos.x, 0, housePos.z + 12);
+            scene.add(player);
+            
+            camera.position.set(0, 1.65, 0);
+            player.add(camera);
+
+            flashLight = new THREE.SpotLight(0xfff5cc, 0, 45, Math.PI / 5, 0.4, 1);
+            flashLight.position.set(0.3, -0.2, 0);
+            flashLight.target.position.set(0, -0.5, -10);
+            camera.add(flashLight);
+            camera.add(flashLight.target);
+
+            playerToolHand = new THREE.Group();
+            playerToolHand.position.set(0.45, -0.45, -0.8);
+            camera.add(playerToolHand);
+
+            updateShelfVisibility();
+            equipVisualTool();
+            setupTouchControls();
+            updateUI();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function buildEnvironment() {
+            const houseGroup = new THREE.Group();
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x825835, roughness: 0.85, side: THREE.DoubleSide });
+
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(14.2, 4.2, 0.6), wallMat);
+            backWall.position.set(0, 2.1, -5.3);
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.2, 11.2), wallMat);
+            leftWall.position.set(-6.8, 2.1, 0);
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.2, 11.2), wallMat);
+            rightWall.position.set(6.8, 2.1, 0);
+            houseGroup.add(backWall, leftWall, rightWall);
+
+            const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(6.0, 4.2, 0.6), wallMat);
+            frontLeft.position.set(-4.1, 2.1, 5.3);
+            const frontRight = new THREE.Mesh(new THREE.BoxGeometry(6.0, 4.2, 0.6), wallMat);
+            frontRight.position.set(4.1, 2.1, 5.3);
+            const frontTop = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.2, 0.6), wallMat);
+            frontTop.position.set(0, 3.6, 5.3);
+            houseGroup.add(frontLeft, frontRight, frontTop);
+
+            const shapeLeft = new THREE.Shape();
+            shapeLeft.moveTo(-3.5, 0); shapeLeft.lineTo(3.5, 0); shapeLeft.lineTo(0, 1.8); shapeLeft.closePath();
+            const gableGeo = new THREE.ExtrudeGeometry(shapeLeft, { depth: 0.6, bevelEnabled: false });
+            
+            const gableFront = new THREE.Mesh(gableGeo, wallMat);
+            gableFront.position.set(0, 4.2, 5.0);
+            const gableBack = new THREE.Mesh(gableGeo, wallMat);
+            gableBack.position.set(0, 4.2, -5.6);
+            houseGroup.add(gableFront, gableBack);
+
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(new THREE.Vector3(0, 0, -5.3)), sizeX: 14.2, sizeZ: 0.6 });
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(new THREE.Vector3(-6.8, 0, 0)), sizeX: 0.6, sizeZ: 11.2 });
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(new THREE.Vector3(6.8, 0, 0)), sizeX: 0.6, sizeZ: 11.2 });
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(new THREE.Vector3(-4.1, 0, 5.3)), sizeX: 6.0, sizeZ: 0.6 });
+            collisionObjects.push({ type: 'box', center: housePos.clone().add(new THREE.Vector3(4.1, 0, 5.3)), sizeX: 6.0, sizeZ: 0.6 });
+
+            const houseFloor = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.12, 10.2), new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.6 }));
+            houseFloor.position.set(0, 0.06, 0);
+            houseGroup.add(houseFloor);
+
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x6b1d0f, roughness: 0.65, side: THREE.DoubleSide });
+            const roofLeft = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.35, 12.8), roofMat);
+            roofLeft.position.set(-3.6, 5.0, 0); roofLeft.rotation.z = Math.PI / 6;
+            const roofRight = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.35, 12.8), roofMat);
+            roofRight.position.set(3.6, 5.0, 0); roofRight.rotation.z = -Math.PI / 6;
+            houseGroup.add(roofLeft, roofRight);
+
+            windowLight1 = new THREE.PointLight(0xffaa33, 0, 8); windowLight1.position.set(-4.8, 2.3, 5.3);
+            windowLight2 = new THREE.PointLight(0xffaa33, 0, 8); windowLight2.position.set(4.8, 2.3, 5.3);
+            indoorTableLamp = new THREE.PointLight(0xffd700, 1.5, 6); indoorTableLamp.position.set(0, 3.2, -1.0);
+            houseGroup.add(windowLight1, windowLight2, indoorTableLamp);
+
+            // Ліжко, ПК, кухня
+            const bedGroup = new THREE.Group();
+            bedGroup.add(new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.22, 1.0), new THREE.MeshStandardMaterial({ color: 0xef4444 })));
+            bedGroup.position.set(4.2, 0.62, -3.2); houseGroup.add(bedGroup);
+
+            const pcGroup = new THREE.Group();
+            pcGroup.add(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.1), new THREE.MeshStandardMaterial({ color: 0x050505, emissive: 0x0055ff, emissiveIntensity: 0.7 })));
+            pcGroup.position.set(-4.2, 1.4, -3.2); houseGroup.add(pcGroup);
+
+            const kitchenGroup = new THREE.Group();
+            kitchenGroup.add(new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.9, 1.1), new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3 })));
+            kitchenGroup.position.set(0, 0.45, -4.6); houseGroup.add(kitchenGroup);
+
+            const chestGroup = new THREE.Group();
+            chestGroup.add(new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 1.3), new THREE.MeshStandardMaterial({ color: 0x5c3a21 })));
+            chestGroup.position.copy(chestPos); scene.add(chestGroup);
+            collisionObjects.push({ type: 'box', center: chestPos, sizeX: 2.2, sizeZ: 1.5 });
+
+            houseGroup.position.copy(housePos);
+            scene.add(houseGroup);
+
+            pcWorldPos.copy(pcGroup.position).add(housePos);
+            bedWorldPos.copy(bedGroup.position).add(housePos);
+            kitchenWorldPos.copy(kitchenGroup.position).add(housePos);
+
+            // АДЕКВАТНИЙ ГЛИБОКИЙ СТАВОК (Витягнутий, більший за гравця, без дерев усередині)
+            const pondGroup = new THREE.Group();
+            const pondCenter = new THREE.Vector3(housePos.x + pondWorldPos.x, 0, housePos.z + pondWorldPos.z);
+            
+            // Заглиблення в землі
+            const pondHole = new THREE.Mesh(
+                new THREE.BoxGeometry(26, 0.6, 14),
+                new THREE.MeshStandardMaterial({ color: 0x1e3a1e, roughness: 0.9 })
+            );
+            pondHole.position.set(pondCenter.x, -0.25, pondCenter.z);
+            
+            // Вода на дні
+            const pondWater = new THREE.Mesh(
+                new THREE.BoxGeometry(24, 0.4, 12),
+                new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.9 })
+            );
+            pondWater.position.set(pondCenter.x, -0.1, pondCenter.z);
+            
+            pondGroup.add(pondHole, pondWater);
+            scene.add(pondGroup);
+            collisionObjects.push({ type: 'box', center: pondCenter, sizeX: 25, sizeZ: 13 });
+
+            // Дерева (гарантовано за межами ставка)
+            const treeCount = 280;
+            const trunkGeo = new THREE.CylinderGeometry(0.35, 0.5, 7, 5);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3319, roughness: 0.9 });
+            const crownGeo = new THREE.DodecahedronGeometry(3.6, 0);
+            const crownMat = new THREE.MeshStandardMaterial({ color: 0x1e4d18, roughness: 0.8 });
+
+            const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
+            const crowns = new THREE.InstancedMesh(crownGeo, crownMat, treeCount);
+            const dummy = new THREE.Object3D();
+
+            let placed = 0, attempts = 0;
+            while (placed < treeCount && attempts < 2000) {
+                attempts++;
+                let tx = (Math.random() - 0.5) * (areaWidth - 20);
+                let tz = (Math.random() - 0.5) * (areaLength - 20);
+                if (Math.hypot(tx - housePos.x, tz - housePos.z) < 22) continue;
+                // Не ставимо дерева на ставок
+                if (Math.abs(tx - pondCenter.x) < 16 && Math.abs(tz - pondCenter.z) < 10) continue;
+
+                const s = 0.8 + Math.random() * 0.5;
+                dummy.position.set(tx, 3.5 * s, tz); dummy.scale.set(s, s * 1.1, s); dummy.updateMatrix();
+                trunks.setMatrixAt(placed, dummy.matrix);
+
+                dummy.position.set(tx, 7.5 * s, tz); dummy.updateMatrix();
+                crowns.setMatrixAt(placed, dummy.matrix);
+                placed++;
+            }
+            scene.add(trunks, crowns);
+        }
+
+        function updateShelfVisibility() {}
+        function getToolMaxCargo(tool) {
+            if (tool === 'shovel') return 8 + toolUpgrades.shovel.capacity * 6;
+            if (tool === 'roller') return 25 + toolUpgrades.roller.capacity * 15;
+            if (tool === 'cart') return 60 + toolUpgrades.cart.capacity * 40;
+            return 0;
+        }
+
+        function equipVisualTool() {
+            if (!playerToolHand) return;
+            while (playerToolHand.children.length > 0) playerToolHand.remove(playerToolHand.children[0]);
+            document.getElementById('btn-tool-use').style.display = activeTool === 'hands' ? 'none' : 'flex';
+            document.getElementById('btn-tool-use').textContent = activeTool === 'rake' ? '🧹' : (activeTool === 'shovel' ? '🪓' : (activeTool === 'roller' ? '📤' : '🌪️'));
+        }
+
+        function generateChestnuts() {
+            const geom = new THREE.SphereGeometry(0.1, 5, 5);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x7c471b, roughness: 0.45 });
+            
+            chestnutInstances = new THREE.InstancedMesh(geom, mat, totalChestnuts);
+            chestnutInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+            const dummy = new THREE.Object3D();
+            let created = 0, tries = 0;
+            const pondCenter = new THREE.Vector3(housePos.x + pondWorldPos.x, 0, housePos.z + pondWorldPos.z);
+
+            while (created < totalChestnuts && tries < totalChestnuts * 3) {
+                tries++;
+                let x = (Math.random() - 0.5) * (areaWidth - 20);
+                let z = (Math.random() - 0.5) * (areaLength - 20);
+
+                if (Math.abs(x - housePos.x) < 9.5 && Math.abs(z - housePos.z) < 8.5) continue;
+                // ЖОДНИХ ЖОЛУДІВ НА СТАВКУ
+                if (Math.abs(x - pondCenter.x) < 15 && Math.abs(z - pondCenter.z) < 9) continue;
+
+                let isTsar = Math.random() < 0.02;
+                dummy.position.set(x, isTsar ? 0.12 : 0.05, z);
+                let scaleVal = isTsar ? 1.8 : 1.0;
+                dummy.scale.set(scaleVal, scaleVal * 0.85, scaleVal);
+                dummy.updateMatrix();
+                chestnutInstances.setMatrixAt(created, dummy.matrix);
+                chestnutData.push({ x: x, z: z, collected: false, isTsar: isTsar });
+                created++;
+            }
+            chestnutInstances.count = created;
+            chestnutInstances.instanceMatrix.needsUpdate = true;
+            scene.add(chestnutInstances);
+        }
+
+        function generateGoldenAcorns() {
+            const geom = new THREE.SphereGeometry(0.16, 6, 6);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xFFD700, emissive: 0xaa7700, emissiveIntensity: 0.5 });
+            goldenAcornInstances = new THREE.InstancedMesh(geom, mat, totalGoldenAcorns);
+            goldenAcornInstances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+            const dummy = new THREE.Object3D();
+            for (let i = 0; i < totalGoldenAcorns; i++) {
+                let x = (Math.random() - 0.5) * (areaWidth - 30);
+                let z = (Math.random() - 0.5) * (areaLength - 30);
+                dummy.position.set(x, 0.14, z); dummy.scale.set(1, 1, 1); dummy.updateMatrix();
+                goldenAcornInstances.setMatrixAt(i, dummy.matrix);
+                goldenAcornData.push({ x, z, collected: false });
+            }
+            goldenAcornInstances.instanceMatrix.needsUpdate = true;
+            scene.add(goldenAcornInstances);
+        }
+
+        function saveGameData() {
+            const data = {
+                money, acorns, inventory, maxInventory, energy, maxEnergy, mushroomCount, totalCollectedStats, foundTsarChestnuts,
+                chestnutPrice, skillPriceLevel, skillBagLevel, skillMaxEnergyLevel, skillSpeedLevel,
+                toolUpgrades, ownedTools, activeTool, toolCargo, perks, houseUpgrades, survivalItems, achievements, foundGoldenCount,
+                dogOwned, dogHunger, dogCargoUnlocked, squirrelHouseOwned, squirrelPairOwned, squirrelSpeedLevel
+            };
+            localStorage.setItem('cleanItUpAloneFinalSave', JSON.stringify(data));
+        }
+
+        function loadGameData() {
+            const saved = localStorage.getItem('cleanItUpAloneFinalSave');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    money = data.money ?? 0; acorns = data.acorns ?? 3; inventory = data.inventory ?? 0; maxInventory = data.maxInventory ?? 5;
+                    maxEnergy = data.maxEnergy ?? 100; energy = data.energy ?? maxEnergy; mushroomCount = data.mushroomCount ?? 0;
+                    totalCollectedStats = data.totalCollectedStats ?? 0; foundTsarChestnuts = data.foundTsarChestnuts ?? 0;
+                    if (data.dogOwned !== undefined) { dogOwned = data.dogOwned; dogHunger = data.dogHunger ?? 100; dogCargoUnlocked = data.dogCargoUnlocked ?? false; }
+                    if (data.squirrelHouseOwned !== undefined) { squirrelHouseOwned = data.squirrelHouseOwned; squirrelPairOwned = data.squirrelPairOwned ?? false; squirrelSpeedLevel = data.squirrelSpeedLevel ?? 0; }
+                } catch (e) {}
+            }
+        }
+
+        // --- МІНІ-КАРТА ТА ПОВНОЕКРАННА КАРТА ---
+        function updateMinimaps() {
+            drawMapOnCanvas(document.getElementById('minimap-canvas'), 70);
+            if (isFullscreenMapOpen) {
+                drawMapOnCanvas(document.getElementById('fullscreen-map-canvas'), 400);
+            }
+        }
+
+        function drawMapOnCanvas(canvas, zoomRange) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // Тон фону карти
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, w, h);
+
+            const scale = w / zoomRange;
+            const centerX = w / 2;
+            const centerY = h / 2;
+
+            // Функція переведення світових координат на екран карти
+            const toMapX = (wx) => centerX + (wx - player.position.x) * scale;
+            const toMapY = (wz) => centerY + (wz - player.position.z) * scale;
+
+            // Ставок на карті
+            ctx.fillStyle = '#0284c7';
+            let pondCenter = new THREE.Vector3(housePos.x + pondWorldPos.x, 0, housePos.z + pondWorldPos.z);
+            ctx.fillRect(toMapX(pondCenter.x - 12), toMapY(pondCenter.z - 6), 24 * scale, 12 * scale);
+
+            // Дім на карті
+            ctx.fillStyle = '#825835';
+            ctx.fillRect(toMapX(housePos.x - 6), toMapY(housePos.z - 6), 12 * scale, 12 * scale);
+
+            // Гравці / цілі
+            if (squirrelHouseOwned) {
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath(); ctx.arc(toMapX(housePos.x - 8), toMapY(housePos.z - 5), 4, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // Гравець (Зелена точка стрілка)
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath(); ctx.arc(centerX, centerY, 5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        function openFullscreenMap() {
+            isFullscreenMapOpen = true;
+            const modal = document.getElementById('fullscreen-map-modal');
+            const canvas = document.getElementById('fullscreen-map-canvas');
+            canvas.width = canvas.parentElement.clientWidth - 40;
+            canvas.height = canvas.parentElement.clientHeight - 100;
+            modal.style.display = 'flex';
+            isModalOpen = true;
+        }
+        function closeFullscreenMap() {
+            isFullscreenMapOpen = false;
+            document.getElementById('fullscreen-map-modal').style.display = 'none';
+            isModalOpen = false;
+        }
+
+        // --- ВИПРАВЛЕНЕ УПРАВЛІННЯ ДЛЯ БРАУЗЕРА (БЕЗ КОНФЛІКТУ ЖЕСТІВ) ---
+        function setupTouchControls() {
+            const zone = document.getElementById('joystick-zone');
+            const thumb = document.getElementById('joystick-thumb');
+            let joyTouchId = null, center = { x: 0, y: 0 };
+
+            zone.addEventListener('touchstart', (e) => {
+                e.preventDefault(); const t = e.changedTouches[0]; joyTouchId = t.identifier;
+                const r = zone.getBoundingClientRect(); center.x = r.left + r.width / 2; center.y = r.top + r.height / 2;
+            }, { passive: false });
+
+            zone.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let t of e.changedTouches) {
+                    if (t.identifier === joyTouchId) {
+                        let dx = t.clientX - center.x, dz = t.clientY - center.y;
+                        const dist = Math.hypot(dx, dz);
+                        if (dist > 38) { dx = (dx / dist) * 38; dz = (dz / dist) * 38; }
+                        thumb.style.transform = `translate(${dx}px, ${dz}px)`;
+                        moveDir.x = dx / 38; moveDir.z = dz / 38;
+                    }
+                }
+            }, { passive: false });
+
+            const resetJoy = (e) => {
+                for (let t of e.changedTouches) if (t.identifier === joyTouchId) { joyTouchId = null; thumb.style.transform = `translate(0px, 0px)`; moveDir.x = 0; moveDir.z = 0; }
+            };
+            zone.addEventListener('touchend', resetJoy); zone.addEventListener('touchcancel', resetJoy);
+
+            // Вільна зона огляду праворуч (вирішує проблему трьох пальців браузера)
+            let lookTouchId = null, prevTouch = { x: 0, y: 0 };
+            window.addEventListener('touchstart', (e) => {
+                if (isModalOpen) return;
+                for (let t of e.changedTouches) {
+                    if (t.clientX > window.innerWidth * 0.3 && lookTouchId === null) {
+                        lookTouchId = t.identifier; prevTouch = { x: t.clientX, y: t.clientY };
+                    }
+                }
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (isModalOpen) return;
+                for (let t of e.changedTouches) {
+                    if (t.identifier === lookTouchId) {
+                        player.rotation.y -= (t.clientX - prevTouch.x) * 0.0055;
+                        camRotX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, camRotX - (t.clientY - prevTouch.y) * 0.0055));
+                        camera.rotation.x = camRotX; prevTouch = { x: t.clientX, y: t.clientY };
+                    }
+                }
+            }, { passive: true });
+
+            const resetLook = (e) => {
+                for (let t of e.changedTouches) if (t.identifier === lookTouchId) lookTouchId = null;
+            };
+            window.addEventListener('touchend', resetLook); window.addEventListener('touchcancel', resetLook);
+        }
+
+        function toggleFlashlight() {
+            flashlightOn = !flashlightOn;
+            flashLight.intensity = flashlightOn ? 2.5 : 0;
+        }
+
+        function restInBed() {
+            energy = maxEnergy; gameTime += 120; if (gameTime >= 1440) gameTime -= 1440;
+            updateUI(); saveGameData(); showToast("Ви виспалися! Бадьорість 100%");
+        }
+
+        function drinkCoffee() {
+            energy = Math.min(maxEnergy, energy + 50); coffeeBuffTimer = 120;
+            updateUI(); saveGameData(); showToast("Ви випили кави! ☕");
+        }
+
+        function startFishing() {
+            if (!survivalItems.rod) { showToast("Купіть рибальську вудку!"); return; }
+            let fishValue = 20 + Math.random() * 30; money += fishValue;
+            updateUI(); saveGameData(); showToast(`Зловили риби на $${fishValue.toFixed(2)}! 🎣`);
+        }
+
+        function useActiveTool() {}
+        function placeEmptyBag() {
+            let bagGroup = new THREE.Group();
+            bagGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 1.0, 8), new THREE.MeshStandardMaterial({ color: 0xc2a378 })));
+            bagGroup.position.copy(player.position.clone().add(new THREE.Vector3(0, 0, -1.5).applyQuaternion(player.quaternion)));
+            bagGroup.position.y = 0; scene.add(bagGroup);
+            bags.push({ mesh: bagGroup, count: 0, capacity: 30 });
+            showToast("Мішок встановлено!"); updateUI();
+        }
+
+        function handleBagInteract() {}
+        function throwIntoChest() {
+            if (inventory === 0) { showToast("Нічого здавати!"); return; }
+            let earned = inventory * chestnutPrice;
+            money += earned; inventory = 0;
+            updateUI(); saveGameData(); showToast(`Зароблено $${earned.toFixed(2)}!`);
+        }
+
+        function openRackModal() { isModalOpen = true; document.getElementById('rack-modal').style.display = 'block'; }
+        function closeRackModal() { isModalOpen = false; document.getElementById('rack-modal').style.display = 'none'; }
+        function openPCModal() { isModalOpen = true; document.getElementById('skills-modal').style.display = 'block'; }
+        function closePCModal() { isModalOpen = false; document.getElementById('skills-modal').style.display = 'none'; }
+
+        function switchTab(tab) {
+            ['skills', 'tools', 'house', 'survival', 'dog', 'squirrels', 'acorns', 'quests'].forEach(t => {
+                document.getElementById('panel-' + t).style.display = (t === tab) ? 'block' : 'none';
+            });
+        }
+
+        function upgradeSkill(type) {
+            let cost = 200;
+            if (money >= cost) { money -= cost; if (type === 'inv') maxInventory += 5; updateUI(); saveGameData(); }
+            else { showToast("Не вистачає грошей!"); }
+        }
+
+        function buyHouseUpgrade(id, cost) {
+            if (money >= cost) { money -= cost; houseUpgrades[id] = true; updateUI(); saveGameData(); showToast("Куплено!"); }
+        }
+        function buySurvivalItem(id, cost) {
+            if (money >= cost) { money -= cost; survivalItems[id] = true; updateUI(); saveGameData(); showToast("Куплено!"); }
+        }
+        function buyDog() {
+            if (money >= 500) { money -= 500; dogOwned = true; updateUI(); saveGameData(); showToast("Пес куплений!"); }
+        }
+        function feedDog() {
+            if (money >= 50) { money -= 50; dogHunger = 100; updateUI(); saveGameData(); showToast("Пес нагодований!"); }
+        }
+        function upgradeDogCargo() {
+            if (money >= 300) { money -= 300; dogCargoUnlocked = true; updateUI(); saveGameData(); }
+        }
+        function buySquirrelHouse() {
+            if (money >= 400) { money -= 400; squirrelHouseOwned = true; updateUI(); saveGameData(); }
+        }
+        function buySquirrelPair() {
+            if (money >= 600) { money -= 600; squirrelPairOwned = true; updateUI(); saveGameData(); }
+        }
+        function upgradeSquirrelSpeed() {
+            if (money >= 500) { money -= 500; squirrelSpeedLevel++; updateUI(); saveGameData(); }
+        }
+        function buyAcornPerk(id, cost) {
+            if (acorns >= cost) { acorns -= cost; perks[id] = true; updateUI(); saveGameData(); }
+        }
+
+        function collectTargetedChestnut() {
+            if (targetedChestnutIndex !== -1 && inventory < maxInventory) {
+                let c = chestnutData[targetedChestnutIndex];
+                c.collected = true; inventory++; totalCollectedStats++;
+                const dummy = new THREE.Object3D(); dummy.position.set(0, -999, 0); dummy.scale.set(0, 0, 0); dummy.updateMatrix();
+                chestnutInstances.setMatrixAt(targetedChestnutIndex, dummy.matrix);
+                chestnutInstances.instanceMatrix.needsUpdate = true;
+                targetedChestnutIndex = -1; document.getElementById('btn-collect').style.display = 'none';
+                updateUI(); saveGameData();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('money-display').textContent = money.toFixed(2);
+            document.getElementById('acorn-display').textContent = acorns;
+            document.getElementById('inventory-display').textContent = inventory;
+            document.getElementById('max-inv-display').textContent = maxInventory;
+            document.getElementById('shrooms-display').textContent = mushroomCount;
+            let percent = (energy / maxEnergy) * 100;
+            document.getElementById('fatigue-bar').style.width = percent + "%";
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = '1';
+            setTimeout(() => { t.style.opacity = '0'; }, 2500);
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const screenCenter = new THREE.Vector2(0, 0);
+
+        function updateGameLogic() {
+            gameTime += 0.5; if (gameTime >= 1440) gameTime %= 1440;
+
+            if (isModalOpen) return;
+
+            let currentSpeed = 0.16 * (1 + skillSpeedLevel * 0.04);
+            let newX = player.position.x - moveDir.z * currentSpeed * Math.sin(player.rotation.y) + moveDir.x * currentSpeed * Math.cos(player.rotation.y);
+            let newZ = player.position.z - moveDir.z * currentSpeed * Math.cos(player.rotation.y) - moveDir.x * currentSpeed * Math.sin(player.rotation.y);
+
+            player.position.x = Math.max(-areaWidth / 2 + 3, Math.min(areaWidth / 2 - 3, newX));
+            player.position.z = Math.max(-areaLength / 2 + 3, Math.min(areaLength / 2 - 3, newZ));
+
+            // Перевірка каштанів навколо для збору
+            targetedChestnutIndex = -1;
+            if (inventory < maxInventory && chestnutInstances) {
+                for (let i = 0; i < chestnutData.length; i++) {
+                    let c = chestnutData[i];
+                    if (!c.collected && Math.hypot(player.position.x - c.x, player.position.z - c.z) < 3.5) {
+                        targetedChestnutIndex = i; break;
+                    }
+                }
+            }
+            document.getElementById('btn-collect').style.display = (targetedChestnutIndex !== -1) ? "flex" : "none";
+            document.getElementById('btn-action').style.display = player.position.distanceTo(chestPos) < 6.0 ? "block" : "none";
+            document.getElementById('btn-pc').style.display = player.position.distanceTo(pcWorldPos) < 1.5 ? "block" : "none";
+            document.getElementById('btn-rest').style.display = player.position.distanceTo(bedWorldPos) < 1.5 ? "block" : "none";
+            document.getElementById('btn-coffee').style.display = player.position.distanceTo(kitchenWorldPos) < 1.5 ? "block" : "none";
+
+            updateMinimaps();
+            let h = Math.floor(gameTime / 60) % 24, m = Math.floor(gameTime % 60);
+            document.getElementById('time-display').textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateGameLogic();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
